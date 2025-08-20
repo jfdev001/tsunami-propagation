@@ -12,9 +12,9 @@ The governing equation of interest is given by (TODO: problem rendering
 asterisk)
 
 $$
-g h \Delta^* \eta^* - \eta_{t^* t^*}^*= 0,
+g h \Delta \eta - \eta_{tt}= 0,
 $$
 
-where $\Delta^*$ is the Laplace operator in dimensional coordinates, $h$ is the
-depth, $t^*$ is the time, $g$ is the graviational acceleration, and the letter
+where $\Delta$ is the Laplace operator in dimensional coordinates, $h$ is the
+depth, $t$ is the time, $g$ is the gravitational acceleration, and the letter
 subscript idenotes partial differentiation.
