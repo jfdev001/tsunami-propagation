@@ -8,8 +8,7 @@ Carrier 2005 that will be used to verify a backward time central difference
 discretization implementation in PETSc---i.e., an implicit time scheme with a 
 central finite difference spatial discretization.
 
-The governing equation of interest is given by (TODO: problem rendering
-asterisk)
+The governing equation of interest is given by
 
 $$
 g h \Delta \eta - \eta_{tt}= 0,
