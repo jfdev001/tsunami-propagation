@@ -1,3 +1,11 @@
+# editing files
+**/*.swp
+**/*.swo
+**/*.vscode 
+
+# python
+.venv
+
 # Prerequisites
 *.d
 
