@@ -11,7 +11,7 @@ central finite difference spatial discretization.
 The governing equation of interest is given by
 
 $$
-g h \Delta^* \eta^* - \eta^*_{t^* t^*} = 0,
+g h \Delta^* \eta^* - \eta_{t^* t^*}^*= 0,
 $$
 
 where $\Delta^*$ is the Laplace operator in dimensional coordinates, $h$ is the
