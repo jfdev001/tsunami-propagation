@@ -6,6 +6,14 @@
 # python
 .venv
 
+**/tmp/
+
+# plots 
+**/*.png
+**/*.PNG
+**/*.jpg
+**/*.JPG
+
 # Prerequisites
 *.d
 
