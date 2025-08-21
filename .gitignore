@@ -5,6 +5,8 @@
 
 # python
 .venv
+**/*.pyc 
+**/__pycache__/
 
 **/tmp/
 
