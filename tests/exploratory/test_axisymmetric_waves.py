@@ -1,7 +1,7 @@
-from numpy import linspace, cos, exp, abs, pi, sqrt, sin
+from numpy import linspace, cos, exp, abs, pi, sqrt, sin, zeros_like
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
-from scipy.special import j0
+from scipy.special import j0, ellipk
 from unittest import TestCase, main
 
 
@@ -22,22 +22,22 @@ def integrand_superposition_no_dt_axisymmetric_wave(rho, r, t):
 
 
 def piecewise_G(rho, r, t):
-    """Equation (10) from Carrier2005"""
-    G = None
-    K = complete_elliptic_integral_of_first_kind
-    k = (4*r*rho)/(t**2 - (r - rho)**2)
+    """Equation (10) from Carrier (2005)"""
+    G = zeros_like(rho, dtype=float)
 
-    raise NotImplementedError(
-        "ambiguity with true values,, array vs single val")
-    if t > (r + rho):
-        G = (2*rho)/(pi*sqrt(t**2 - (r - rho)**2))*K(k)
-    elif abs(r - rho) < t and t < (r + rho):
-        G = (1/pi)*(sqrt(rho/r))*K(1/k)
-    elif t < abs(r - rho):
-        G = 0
-    else:
-        raise ValueError("unexpected rho, r, t args")
+    # define k parameter
+    denom = t**2 - (r - rho)**2
+    k = (4*r*rho) / denom
 
+    # Case 1: t > r + rho
+    mask1 = t > (r + rho)
+    G[mask1] = (2*rho[mask1])/(pi*sqrt(denom[mask1])) * ellipk(k[mask1])
+
+    # Case 2: |r - rho| < t < r + rho
+    mask2 = (abs(r - rho) < t) & (t < (r + rho))
+    G[mask2] = (1/pi)*sqrt(rho[mask2]/r) * ellipk(1/k[mask2])
+
+    # Case 3: G stays zero
     return G
 
 
@@ -61,11 +61,12 @@ class TestAxisymmetricWaves(TestCase):
             rho, r, t)
         axs[0].plot(rho, fig2a_out, alpha=0.75)
 
-        pass
+        pass  # 2b
 
-        # fig2c_out = integrand_superposition_no_dt_axisymmetric_wave(
-        # rho, r, t)
-        # axs[2].plot(rho, fig2c_out)
+        rho = linspace(0, 3, 500)
+        fig2c_out = integrand_superposition_no_dt_axisymmetric_wave(
+            rho, r, t)
+        axs[2].plot(rho, fig2c_out)
 
         axs[2].set_xlabel("rho")
         plt.show()
