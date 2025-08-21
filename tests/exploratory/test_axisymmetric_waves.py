@@ -10,12 +10,46 @@ def integrand_superposition_simple_axisymmetric_wave(rho, r, t):
     return rho*j0(rho*r)*cos(rho*t)*exp((-rho**2)/4)
 
 
-def integrand_superposition_with_dt_axisymmetric_wave(rho, r, t):
+def integrand_superposition_with_Gdot_axisymmetric_wave(rho, r, t):
     """Integrand in Equation (8) from Carrier2005."""
     raise NotImplementedError("requires d/dt[G]")
 
 
-def integrand_superposition_no_dt_axisymmetric_wave(rho, r, t):
+def Gdot_t_greater_r_plus_rho(rho, r, t):
+    """Equation (10) derivative with respect to `t` of the first piece.
+
+    Uses product rule on the two functions `f` and `K` where `f` is 
+    defined below.
+
+    ```math
+    f = \frac{2 \rho}{\pi \sqrt{t^2 - (r - \rho)^2}}
+    ```
+    """
+    K = ellipk
+    n = 4*r*rho
+    d = t**2 - (r - rho)**2
+
+    f = (2*rho)/(pi * sqrt(t**2 - (r - rho)**2))
+
+    def fdot(rho, r, t):
+        return (-2*rho*t)/(pi*d**(3/2))
+
+    def Kdot(rho, r, t):
+        raise ValueError
+
+        def Kdot_integrand(v, rho, r, t):
+            return (t*sin(v)**2)/(1 - (t**2 - (r-rho)**2)*sin(v)**2)
+        return quad(Kdot_integrand, 0, pi, (rho, r, t))
+
+    return fdot(rho, r, t)*K(d/n) + f*Kdot(rho, r, t)
+
+
+def Gdot_abs_r_minus_rho_less_t_less_r_plus_rho(rho, r, t):
+    """Equation (10) second piece."""
+    pass
+
+
+def integrand_superposition_no_Gdot_axisymmetric_wave(rho, r, t):
     """Integrand in Equation (9) from Carrier2005."""
     G = piecewise_G
     return 2*exp(-rho**2)*G(rho, r, t)
@@ -64,7 +98,7 @@ class TestAxisymmetricWaves(TestCase):
         pass  # 2b
 
         rho = linspace(0, 3, 500)
-        fig2c_out = integrand_superposition_no_dt_axisymmetric_wave(
+        fig2c_out = integrand_superposition_no_Gdot_axisymmetric_wave(
             rho, r, t)
         axs[2].plot(rho, fig2c_out)
 
