@@ -46,7 +46,7 @@ def Gdot2(rho, r, t):
 
     Case 2: |r - rho| < t < r + rho
     """
-    return 2*t*sqrt(rho/r)*(-(1 - (t**2 - (r - rho)**2)/(4*r*rho))*ellipk((t**2 - (r - rho)**2)/(4*r*rho)) + ellipe((t**2 - (r - rho)**2)/(4*r*rho)))*ellipk((t**2 - (r - rho)**2)/(4*r*rho))/(pi*(1 - (t**2 - (r - rho)**2)/(4*r*rho))*(t**2 - (r - rho)**2))
+    return t*sqrt(rho/r)*(-(1 - (t**2 - (r - rho)**2)/(4*r*rho))*ellipk((t**2 - (r - rho)**2)/(4*r*rho)) + ellipe((t**2 - (r - rho)**2)/(4*r*rho)))/(pi*(1 - (t**2 - (r - rho)**2)/(4*r*rho))*(t**2 - (r - rho)**2))
 
 
 def integrand_superposition_no_Gdot_axisymmetric_wave(rho, r, t):
@@ -78,24 +78,24 @@ def piecewise_G(rho, r, t):
 class TestAxisymmetricWaves(TestCase):
     def test_plot_fig2(self):
         """Reproduce figure (2) from Carrier 2005."""
-        rho = linspace(0, 5, 840)
         t = 102
         r = 100
-        fig, axs = plt.subplots(3, 1, figsize=(6, 8))
+        fig, axs = plt.subplots(3, 1, figsize=(6, 10))
 
+        # 2a
+        rho = linspace(0, 5, 840)
         fig2a_out = integrand_superposition_simple_axisymmetric_wave(
             rho, r, t)
         axs[0].plot(rho, fig2a_out, alpha=0.75)
 
-        # TODO: if you do not constrain the ylim... plot has general
-        # expected shape in paper... but is still not exactly right it
-        # seems....
+        # 2b
         rho = linspace(0, 3, 500)
         fig2b_out = integrand_superposition_with_Gdot_axisymmetric_wave(
             rho, r, t)
         axs[1].plot(rho, fig2b_out)
         axs[1].set_ylim(-0.06, 0.06)
 
+        # 2c
         fig2c_out = integrand_superposition_no_Gdot_axisymmetric_wave(
             rho, r, t)
         axs[2].plot(rho, fig2c_out)
