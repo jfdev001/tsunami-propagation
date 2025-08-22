@@ -1,7 +1,7 @@
 from numpy import linspace, cos, exp, abs, pi, sqrt, sin, zeros_like
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
-from scipy.special import j0, ellipk
+from scipy.special import j0, ellipk, ellipe
 from unittest import TestCase, main
 
 
@@ -12,41 +12,41 @@ def integrand_superposition_simple_axisymmetric_wave(rho, r, t):
 
 def integrand_superposition_with_Gdot_axisymmetric_wave(rho, r, t):
     """Integrand in Equation (8) from Carrier2005."""
-    raise NotImplementedError("requires d/dt[G]")
+    Gdot = piecewise_Gdot
+    return 2*exp(-rho**2)*Gdot(rho, r, t)
 
 
-def Gdot_t_greater_r_plus_rho(rho, r, t):
+def piecewise_Gdot(rho, r, t):
+    Gdot = zeros_like(rho, dtype=float)
+
+    # Case 1: t > r + rho
+    mask1 = t > (r + rho)
+    rho1 = rho[mask1]
+    Gdot[mask1] = Gdot1(rho1, r, t)
+
+    # Case 2: |r - rho| < t < r + rho
+    mask2 = (abs(r - rho) < t) & (t < (r + rho))
+    rho2 = rho[mask2]
+    Gdot[mask2] = Gdot2(rho2, r, t)
+
+    # Case 3: Gdot stays zero
+    return Gdot
+
+
+def Gdot1(rho, r, t):
     """Equation (10) derivative with respect to `t` of the first piece.
 
-    Uses product rule on the two functions `f` and `K` where `f` is 
-    defined below.
-
-    ```math
-    f = \frac{2 \rho}{\pi \sqrt{t^2 - (r - \rho)^2}}
-    ```
+    Case 1: t > r + rho
     """
-    K = ellipk
-    n = 4*r*rho
-    d = t**2 - (r - rho)**2
-
-    f = (2*rho)/(pi * sqrt(t**2 - (r - rho)**2))
-
-    def fdot(rho, r, t):
-        return (-2*rho*t)/(pi*d**(3/2))
-
-    def Kdot(rho, r, t):
-        raise ValueError
-
-        def Kdot_integrand(v, rho, r, t):
-            return (t*sin(v)**2)/(1 - (t**2 - (r-rho)**2)*sin(v)**2)
-        return quad(Kdot_integrand, 0, pi, (rho, r, t))
-
-    return fdot(rho, r, t)*K(d/n) + f*Kdot(rho, r, t)
+    return -2*rho*t*(-(-4*r*rho/(t**2 - (r - rho)**2) + 1)*ellipk(4*r*rho/(t**2 - (r - rho)**2)) + ellipe(4*r*rho/(t**2 - (r - rho)**2)))/(pi*(t**2 - (r - rho)**2)**(3/2)*(-4*r*rho/(t**2 - (r - rho)**2) + 1)) - 2*rho*t*ellipk(4*r*rho/(t**2 - (r - rho)**2))/(pi*(t**2 - (r - rho)**2)**(3/2))
 
 
-def Gdot_abs_r_minus_rho_less_t_less_r_plus_rho(rho, r, t):
-    """Equation (10) second piece."""
-    pass
+def Gdot2(rho, r, t):
+    """Equation (10) second piece.
+
+    Case 2: |r - rho| < t < r + rho
+    """
+    return 2*t*sqrt(rho/r)*(-(1 - (t**2 - (r - rho)**2)/(4*r*rho))*ellipk((t**2 - (r - rho)**2)/(4*r*rho)) + ellipe((t**2 - (r - rho)**2)/(4*r*rho)))*ellipk((t**2 - (r - rho)**2)/(4*r*rho))/(pi*(1 - (t**2 - (r - rho)**2)/(4*r*rho))*(t**2 - (r - rho)**2))
 
 
 def integrand_superposition_no_Gdot_axisymmetric_wave(rho, r, t):
@@ -75,29 +75,27 @@ def piecewise_G(rho, r, t):
     return G
 
 
-def complete_elliptic_integral_of_first_kind(k):
-    """Defined after equation (10) in Carrier2005"""
-    def integrand(v, k):
-        return (1/sqrt(1 - k*(sin(v))**2))
-
-    return quad(integrand, 0, pi/2, k)
-
-
 class TestAxisymmetricWaves(TestCase):
     def test_plot_fig2(self):
         """Reproduce figure (2) from Carrier 2005."""
         rho = linspace(0, 5, 840)
         t = 102
         r = 100
-        fig, axs = plt.subplots(3, 1, figsize=(8, 15))
+        fig, axs = plt.subplots(3, 1, figsize=(6, 8))
 
         fig2a_out = integrand_superposition_simple_axisymmetric_wave(
             rho, r, t)
         axs[0].plot(rho, fig2a_out, alpha=0.75)
 
-        pass  # 2b
-
+        # TODO: if you do not constrain the ylim... plot has general
+        # expected shape in paper... but is still not exactly right it
+        # seems....
         rho = linspace(0, 3, 500)
+        fig2b_out = integrand_superposition_with_Gdot_axisymmetric_wave(
+            rho, r, t)
+        axs[1].plot(rho, fig2b_out)
+        axs[1].set_ylim(-0.06, 0.06)
+
         fig2c_out = integrand_superposition_no_Gdot_axisymmetric_wave(
             rho, r, t)
         axs[2].plot(rho, fig2c_out)
