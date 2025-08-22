@@ -1,3 +1,4 @@
+"""Use symbolic manipulation to get d/dt[G] in equation (8) of Carrier 2005"""
 from unittest import main, TestCase
 from sympy import (
     symbols, sin, sqrt, pi, diff, integrate, init_printing, pprint, elliptic_k
@@ -10,12 +11,6 @@ class TestAxisymmetricSymbolic(TestCase):
     def test_symbolic_G(self):
 
         rho, r, t, v = symbols("rho r t v")
-
-        def K_integrand(k):
-            return 1/(sqrt(1 - k*sin(v)**2))
-
-        def K(k):
-            return integrate(K_integrand(k), (v, 0, pi/2))
 
         f = (2*rho)/(pi*sqrt(t**2 - (r - rho)**2))
         k1 = (4*r*rho)/(t**2 - (r - rho)**2)
