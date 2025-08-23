@@ -1,8 +1,11 @@
-from numpy import linspace, cos, exp, abs, pi, sqrt, sin, zeros_like
+from numpy import (linspace, cos, exp, abs, pi, sqrt, sin, zeros_like, inf,
+                   atleast_1d)
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
 from scipy.special import j0, ellipk, ellipe
 from unittest import TestCase, main
+
+from pdb import set_trace
 
 
 def integrand_superposition_simple_axisymmetric_wave(rho, r, t):
@@ -17,6 +20,7 @@ def integrand_superposition_with_Gdot_axisymmetric_wave(rho, r, t):
 
 
 def piecewise_Gdot(rho, r, t):
+    rho = atleast_1d(rho)
     Gdot = zeros_like(rho, dtype=float)
 
     # Case 1: t > r + rho
@@ -30,7 +34,7 @@ def piecewise_Gdot(rho, r, t):
     Gdot[mask2] = Gdot2(rho2, r, t)
 
     # Case 3: Gdot stays zero
-    return Gdot
+    return Gdot if Gdot.size > 1 else Gdot.item()
 
 
 def Gdot1(rho, r, t):
@@ -52,11 +56,13 @@ def Gdot2(rho, r, t):
 def integrand_superposition_no_Gdot_axisymmetric_wave(rho, r, t):
     """Integrand in Equation (9) from Carrier2005."""
     G = piecewise_G
-    return 2*exp(-rho**2)*G(rho, r, t)
+    integrand = 2*exp(-rho**2)*G(rho, r, t)
+    return integrand
 
 
 def piecewise_G(rho, r, t):
     """Equation (10) from Carrier (2005)"""
+    rho = atleast_1d(rho)
     G = zeros_like(rho, dtype=float)
 
     # define k parameter
@@ -72,7 +78,7 @@ def piecewise_G(rho, r, t):
     G[mask2] = (1/pi)*sqrt(rho[mask2]/r) * ellipk(1/k[mask2])
 
     # Case 3: G stays zero
-    return G
+    return G if G.size > 1 else G.item()
 
 
 class TestAxisymmetricWaves(TestCase):
@@ -82,7 +88,7 @@ class TestAxisymmetricWaves(TestCase):
         r = 100
         fig, axs = plt.subplots(3, 1, figsize=(6, 10))
 
-        # 2a
+        # 2af
         rho = linspace(0, 5, 840)
         fig2a_out = integrand_superposition_simple_axisymmetric_wave(
             rho, r, t)
@@ -101,7 +107,41 @@ class TestAxisymmetricWaves(TestCase):
         axs[2].plot(rho, fig2c_out)
 
         axs[2].set_xlabel("rho")
+        # plt.show()
+        return
+
+    def test_plot_fig3(self):
+        """Numerically solve equation (9).
+
+        TODO: Then take derivative??
+        """
+        rs = linspace(0, 10, 100)
+        t_a = [0.5, 0.75, 1.0, 1.5, 2.0, 5.0]
+        t_a_to_r_to_wave_displacement = []
+        for t in t_a:
+            r_to_wave_displacement = []
+            for r in rs:
+                # TODO: should probably do this with symbolic library?
+                # i.e., once integral is computed, then use d/dt ??
+                wave_displacement, err = quad(
+                    integrand_superposition_no_Gdot_axisymmetric_wave,
+                    0,
+                    3,
+                    args=(r, t)
+                )
+                r_to_wave_displacement.append(wave_displacement)
+            t_a_to_r_to_wave_displacement.append(r_to_wave_displacement)
+
+        fig, axs = plt.subplots(2, 1)
+
+        # plot fig3a
+        for tix in range(len(t_a)):
+            t = t_a[tix]
+            r_to_wave_displacement = t_a_to_r_to_wave_displacement[tix]
+            axs[0].plot(rs, r_to_wave_displacement, label=f"t={t}")
+        axs[0].legend()
         plt.show()
+        # t_b = [1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 40.0, 50.0]
         return
 
 
