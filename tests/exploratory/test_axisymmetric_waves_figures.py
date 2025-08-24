@@ -142,6 +142,12 @@ class TestAxisymmetricWaves(TestCase):
         """Numerically solve equation (9).
 
         TODO: Then take derivative??
+
+        TODO: The Green function has a known singularity!! 
+        Carrier2002 "Tsunami Run-up and Draw-Down on a Plane Beach"....
+        could either (a) split integral to perform integration? or (b)
+        try and see about ISML software? since this what's recommneded in the
+        paper...
         """
         rs = linspace(0, 10, 100)
         t_a = [0.5, 0.75, 1.0, 1.5, 2.0, 5.0]
