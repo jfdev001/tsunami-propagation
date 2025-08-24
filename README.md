@@ -20,7 +20,8 @@ subscript idenotes partial differentiation.
 
 For figures 2 and 3, the below equations are relevant:
 
-Wave displacement With time derivative (i.e., equation (8)) in the integrand
+Wave displacement with time derivative in the integrand.
+This is equation (8),
 
 $$
 \eta(r, t) = \int_{0}^{\infty} 2 \exp(-\rho^2) G_t(\rho, r, t)\ d\rho
@@ -43,7 +44,7 @@ K(k) = \int_{0}^{\pi / 2} \frac{dv}{\sqrt{1 - k \sin^2 v}}.
 $$
 
 Also, the wave displacement without time derivative (i.e., equation (9)) in 
-the integrand
+the integrand. This is equation (9), 
 
 $$
 \eta(r, t) = \frac{\partial}{\partial t}\int_{0}^{\infty} 2 \exp(-\rho^2) G(\rho, r, t)\ d\rho
