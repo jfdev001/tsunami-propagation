@@ -122,7 +122,15 @@ class TestAxisymmetricWaves(TestCase):
             r_to_wave_displacement = []
             for r in rs:
                 # TODO: should probably do this with symbolic library?
-                # i.e., once integral is computed, then use d/dt ??
+                # i.e., once integral is computed, then use d/dt ??...
+                # could do something like integrate Gdot1 to inf and 
+                # Gdot2 to inf, get these closed forms, then use these
+                # close forms in branches based on the cases defining G
+                # TODO: Other approaches: analyze G_t to see 
+                # where discontinuities would appear and integrate around
+                # those... or analyze plots of integrand no gdot 
+                # and visually identify discontinuities...
+                # 
                 wave_displacement, err = quad(
                     integrand_superposition_no_Gdot_axisymmetric_wave,
                     0,
