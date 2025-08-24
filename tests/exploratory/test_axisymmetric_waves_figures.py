@@ -81,6 +81,34 @@ def piecewise_G(rho, r, t):
     return G if G.size > 1 else G.item()
 
 
+def integrate_rho_for_ts_and_rs(
+        integrand, rho_start, rho_stop, ts, rs):
+    """ 
+    TODO: should probably do this with symbolic library?
+    i.e., once integral is computed, then use d/dt ??...
+    could do something like integrate Gdot1 to inf and
+    Gdot2 to inf, get these closed forms, then use these
+    close forms in branches based on the cases defining G
+    TODO: Other approaches: analyze G_t to see
+    where discontinuities would appear and integrate around
+    those... or analyze plots of integrand no gdot
+    and visually identify discontinuities...
+    """
+    t_to_r_to_wave_displacement = []
+    for t in ts:
+        r_to_wave_displacement = []
+        for r in rs:
+            wave_displacement, err = quad(
+                integrand,
+                rho_start,
+                rho_stop,
+                args=(r, t)
+            )
+            r_to_wave_displacement.append(wave_displacement)
+        t_to_r_to_wave_displacement.append(r_to_wave_displacement)
+    return t_to_r_to_wave_displacement
+
+
 class TestAxisymmetricWaves(TestCase):
     def test_plot_fig2(self):
         """Reproduce figure (2) from Carrier 2005."""
@@ -117,39 +145,33 @@ class TestAxisymmetricWaves(TestCase):
         """
         rs = linspace(0, 10, 100)
         t_a = [0.5, 0.75, 1.0, 1.5, 2.0, 5.0]
-        t_a_to_r_to_wave_displacement = []
-        for t in t_a:
-            r_to_wave_displacement = []
-            for r in rs:
-                # TODO: should probably do this with symbolic library?
-                # i.e., once integral is computed, then use d/dt ??...
-                # could do something like integrate Gdot1 to inf and 
-                # Gdot2 to inf, get these closed forms, then use these
-                # close forms in branches based on the cases defining G
-                # TODO: Other approaches: analyze G_t to see 
-                # where discontinuities would appear and integrate around
-                # those... or analyze plots of integrand no gdot 
-                # and visually identify discontinuities...
-                # 
-                wave_displacement, err = quad(
-                    integrand_superposition_no_Gdot_axisymmetric_wave,
-                    0,
-                    3,
-                    args=(r, t)
-                )
-                r_to_wave_displacement.append(wave_displacement)
-            t_a_to_r_to_wave_displacement.append(r_to_wave_displacement)
-
-        fig, axs = plt.subplots(2, 1)
+        fig, axs = plt.subplots(2, 1, figsize=(15, 8))
 
         # plot fig3a
+        t_a_to_r_to_wave_displacement = integrate_rho_for_ts_and_rs(
+            integrand_superposition_no_Gdot_axisymmetric_wave,
+            rho_start=0, rho_stop=3, ts=t_a, rs=rs)
+
         for tix in range(len(t_a)):
             t = t_a[tix]
             r_to_wave_displacement = t_a_to_r_to_wave_displacement[tix]
             axs[0].plot(rs, r_to_wave_displacement, label=f"t={t}")
+
         axs[0].legend()
+
+        t_b = [1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 40.0, 50.0]
+        t_b_to_r_to_wave_displacement = integrate_rho_for_ts_and_rs(
+            integrand_superposition_no_Gdot_axisymmetric_wave,
+            rho_start=0, rho_stop=3, ts=t_b, rs=rs)
+
+        for tix in range(len(t_b)):
+            t = t_b[tix]
+            r_to_wave_displacement = t_b_to_r_to_wave_displacement[tix]
+            axs[1].plot(rs, r_to_wave_displacement, label=f"t={t}")
+
+        axs[1].legend()
+
         plt.show()
-        # t_b = [1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 40.0, 50.0]
         return
 
 
