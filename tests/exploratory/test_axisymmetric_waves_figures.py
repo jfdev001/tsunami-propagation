@@ -109,16 +109,29 @@ def integrate_rho_for_ts_and_rs(
     return t_to_r_to_wave_displacement
 
 
+def plot_singularities(ax, rhos, r, ts):
+    G = piecewise_G
+    Gs = [G(rhos, r, t) for t in ts]
+    for ix, t in enumerate(ts):
+        singularity = singularity_at_rho(t, r)
+        ax.vlines(
+            singularity, ymin=0, ymax=max(Gs[ix]), color="red",
+            label="singularity" if ix == 0 else "")
+        ax.plot(rhos, Gs[ix], label=f"t={t}")
+    return
+
+
+def singularity_at_rho(t, r):
+    # not including 1/2 because t = 1/2 lambda it seems...
+    return t - r
+
+
 class TestAxisymmetricWaves(TestCase):
     def test_plot_fig2_carrier2002(self):
         """Reproduce figure 2 from Carrier2002, Green's function and discontin.
 
         G(b, sigma, lambda) == G(rho, r, t)
         """
-
-        def singularity_at_rho(t, r):
-            # not including 1/2 because t = 1/2 lambda it seems...
-            return t - r
 
         fig, axs = plt.subplots(2, 1, figsize=(6, 10))
         fig.suptitle("Singularities of Green's Function")
@@ -129,14 +142,7 @@ class TestAxisymmetricWaves(TestCase):
         ts = lambdas = [0.1, 0.2, 0.3, 0.4, 0.5]
         r = sigma = 0.05
         rhos = bs = linspace(0, 1, 100)
-        Gs = [G(rhos, r, t) for t in ts]
-        for ix, t in enumerate(ts):
-            singularity = singularity_at_rho(t, r)
-            axs[0].vlines(
-                singularity, ymin=0, ymax=max(Gs[ix]), color="red",
-                label="singularity" if ix == 0 else "")
-            axs[0].plot(rhos, Gs[ix], label=f"t={t}")
-        axs[0].set_xlabel("rho")
+        plot_singularities(axs[0], rhos, r, ts)
         axs[0].set_ylabel("G")
         axs[0].set_title(f"r = {r}")
         axs[0].legend()
@@ -145,18 +151,12 @@ class TestAxisymmetricWaves(TestCase):
         ts = [102]
         r = 100
         rhos = linspace(0, 3, 500)
-        Gs = [G(rhos, r, t) for t in ts]
-        for ix, t in enumerate(ts):
-            singularity = singularity_at_rho(t, r)
-            axs[1].vlines(
-                singularity, ymin=0, ymax=max(Gs[ix]), color="red",
-                label="singularity" if ix == 0 else "")
-            axs[1].plot(rhos, Gs[ix], label=f"t={t}")
+        plot_singularities(axs[1], rhos, r, ts)
+        axs[1].set_xlabel("rho")
         axs[1].set_ylabel("G")
         axs[1].set_title(f"r = {r}")
         axs[1].legend()
 
-        plt.show()
         return
 
     def test_plot_fig2(self):
@@ -165,7 +165,7 @@ class TestAxisymmetricWaves(TestCase):
         r = 100
         fig, axs = plt.subplots(3, 1, figsize=(6, 10))
 
-        # 2af
+        # 2a
         rho = linspace(0, 5, 840)
         fig2a_out = integrand_superposition_simple_axisymmetric_wave(
             rho, r, t)
@@ -189,11 +189,8 @@ class TestAxisymmetricWaves(TestCase):
         # plt.show()
         return
 
-    @skip("not correct yet")
     def test_plot_fig3(self):
         """Numerically solve equation (9).
-
-        TODO: Then take derivative??
 
         TODO: The Green function has a known singularity!! 
         Carrier2002 "Tsunami Run-up and Draw-Down on a Plane Beach"....
@@ -203,31 +200,56 @@ class TestAxisymmetricWaves(TestCase):
         """
         rs = linspace(0, 10, 100)
         t_a = [0.5, 0.75, 1.0, 1.5, 2.0, 5.0]
-        fig, axs = plt.subplots(2, 1, figsize=(15, 8))
+        fig, axs = plt.subplots(2, 2, figsize=(15, 8))
+        rho_start = 0
+        rho_stop = 3
+        rhos = linspace(rho_start, rho_stop, 100)
 
         # plot fig3a
         t_a_to_r_to_wave_displacement = integrate_rho_for_ts_and_rs(
             integrand_superposition_no_Gdot_axisymmetric_wave,
-            rho_start=0, rho_stop=3, ts=t_a, rs=rs)
+            rho_start=rho_start, rho_stop=rho_stop, ts=t_a, rs=rs)
 
         for tix in range(len(t_a)):
             t = t_a[tix]
             r_to_wave_displacement = t_a_to_r_to_wave_displacement[tix]
-            axs[0].plot(rs, r_to_wave_displacement, label=f"t={t}")
+            axs[0, 0].plot(rs, r_to_wave_displacement, label=f"t={t}")
 
-        axs[0].legend()
+        axs[0, 0].legend()
+        axs[0, 0].set_xlabel("r")
+        axs[0, 0].set_ylabel(r"wave displacement $\eta$")
 
+        # supplementary plot:
+        rs_subsample = [rs[0], rs[24], rs[49], rs[99]]
+        G = piecewise_G
+        t_to_r_to_Gs = []
+        for t in t_a:
+            r_to_Gs = []
+            for rix, r in enumerate(rs_subsample):
+                Gs = G(rhos, r, t)
+                axs[0, 1].plot(
+                    rhos, Gs, label=f"r={r}, t={t}")
+                r_to_Gs.append(Gs)
+            t_to_r_to_Gs.append(r_to_Gs)
+            break
+        axs[0, 1].legend()
+        axs[0, 1].set_xlabel("rho")
+        axs[0, 1].set_ylabel("G")
+
+        # plot fig3b
         t_b = [1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 40.0, 50.0]
         t_b_to_r_to_wave_displacement = integrate_rho_for_ts_and_rs(
             integrand_superposition_no_Gdot_axisymmetric_wave,
-            rho_start=0, rho_stop=3, ts=t_b, rs=rs)
+            rho_start=rho_start, rho_stop=rho_stop, ts=t_b, rs=rs)
 
         for tix in range(len(t_b)):
             t = t_b[tix]
             r_to_wave_displacement = t_b_to_r_to_wave_displacement[tix]
-            axs[1].plot(rs, r_to_wave_displacement, label=f"t={t}")
+            axs[1, 0].plot(rs, r_to_wave_displacement, label=f"t={t}")
 
-        axs[1].legend()
+        axs[1, 0].legend()
+        axs[1, 0].set_xlabel("r")
+        axs[1, 0].set_ylabel(r"wave displacement $\eta$")
 
         plt.show()
         return
