@@ -115,26 +115,47 @@ class TestAxisymmetricWaves(TestCase):
 
         G(b, sigma, lambda) == G(rho, r, t)
         """
-        ts = lambdas = [0.1, 0.2, 0.3, 0.4, 0.5]
-        r = sigma = 0.05
-        rhos = bs = linspace(0, 1, 100)
 
         def singularity_at_rho(t, r):
             # not including 1/2 because t = 1/2 lambda it seems...
             return t - r
 
+        fig, axs = plt.subplots(2, 1, figsize=(6, 10))
+        fig.suptitle("Singularities of Green's Function")
+
         G = piecewise_G
+
+        # From carrier2002
+        ts = lambdas = [0.1, 0.2, 0.3, 0.4, 0.5]
+        r = sigma = 0.05
+        rhos = bs = linspace(0, 1, 100)
         Gs = [G(rhos, r, t) for t in ts]
-        fig, ax = plt.subplots()
         for ix, t in enumerate(ts):
             singularity = singularity_at_rho(t, r)
-            ax.vlines(
+            axs[0].vlines(
                 singularity, ymin=0, ymax=max(Gs[ix]), color="red",
                 label="singularity" if ix == 0 else "")
-            ax.plot(rhos, Gs[ix], label=f"t={t}")
-        ax.set_xlabel("rho")
-        ax.set_ylabel("G")
-        ax.legend()
+            axs[0].plot(rhos, Gs[ix], label=f"t={t}")
+        axs[0].set_xlabel("rho")
+        axs[0].set_ylabel("G")
+        axs[0].set_title(f"r = {r}")
+        axs[0].legend()
+
+        # Analysis for fig2a of carrier2005
+        ts = [102]
+        r = 100
+        rhos = linspace(0, 3, 500)
+        Gs = [G(rhos, r, t) for t in ts]
+        for ix, t in enumerate(ts):
+            singularity = singularity_at_rho(t, r)
+            axs[1].vlines(
+                singularity, ymin=0, ymax=max(Gs[ix]), color="red",
+                label="singularity" if ix == 0 else "")
+            axs[1].plot(rhos, Gs[ix], label=f"t={t}")
+        axs[1].set_ylabel("G")
+        axs[1].set_title(f"r = {r}")
+        axs[1].legend()
+
         plt.show()
         return
 
@@ -149,6 +170,7 @@ class TestAxisymmetricWaves(TestCase):
         fig2a_out = integrand_superposition_simple_axisymmetric_wave(
             rho, r, t)
         axs[0].plot(rho, fig2a_out, alpha=0.75)
+        axs[0].set_title("Different Integrands for t=102, r=100")
 
         # 2b
         rho = linspace(0, 3, 500)
@@ -163,6 +185,7 @@ class TestAxisymmetricWaves(TestCase):
         axs[2].plot(rho, fig2c_out)
 
         axs[2].set_xlabel("rho")
+
         # plt.show()
         return
 
