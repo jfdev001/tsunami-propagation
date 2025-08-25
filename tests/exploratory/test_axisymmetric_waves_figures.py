@@ -3,7 +3,7 @@ from numpy import (linspace, cos, exp, abs, pi, sqrt, sin, zeros_like, inf,
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
 from scipy.special import j0, ellipk, ellipe
-from unittest import TestCase, main
+from unittest import TestCase, main, skip
 
 from pdb import set_trace
 
@@ -110,6 +110,34 @@ def integrate_rho_for_ts_and_rs(
 
 
 class TestAxisymmetricWaves(TestCase):
+    def test_plot_fig2_carrier2002(self):
+        """Reproduce figure 2 from Carrier2002, Green's function and discontin.
+
+        G(b, sigma, lambda) == G(rho, r, t)
+        """
+        ts = lambdas = [0.1, 0.2, 0.3, 0.4, 0.5]
+        r = sigma = 0.05
+        rhos = bs = linspace(0, 1, 100)
+
+        def singularity_at_rho(t, r):
+            # not including 1/2 because t = 1/2 lambda it seems...
+            return t - r
+
+        G = piecewise_G
+        Gs = [G(rhos, r, t) for t in ts]
+        fig, ax = plt.subplots()
+        for ix, t in enumerate(ts):
+            singularity = singularity_at_rho(t, r)
+            ax.vlines(
+                singularity, ymin=0, ymax=max(Gs[ix]), color="red",
+                label="singularity" if ix == 0 else "")
+            ax.plot(rhos, Gs[ix], label=f"t={t}")
+        ax.set_xlabel("rho")
+        ax.set_ylabel("G")
+        ax.legend()
+        plt.show()
+        return
+
     def test_plot_fig2(self):
         """Reproduce figure (2) from Carrier 2005."""
         t = 102
@@ -138,6 +166,7 @@ class TestAxisymmetricWaves(TestCase):
         # plt.show()
         return
 
+    @skip("not correct yet")
     def test_plot_fig3(self):
         """Numerically solve equation (9).
 
