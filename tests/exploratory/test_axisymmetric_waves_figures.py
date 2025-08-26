@@ -1,5 +1,6 @@
 from numpy import (linspace, cos, exp, abs, pi, sqrt, sin, zeros_like, inf,
-                   atleast_1d)
+                   atleast_1d, isclose)
+from numpy import all as np_all
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
 from scipy.special import j0, ellipk, ellipe
@@ -189,6 +190,43 @@ class TestAxisymmetricWaves(TestCase):
         # plt.show()
         return
 
+    def test_integrate_integrand_superposition_with_Gdot_axisymmetric_wave(self):
+        rho_start = 0
+        rho_stop = 3
+        rhos = linspace(rho_start, rho_stop, 500)
+        ylims = (-100, 100)
+
+        # plot the integrand for a couple different ts and rs to see
+        # what this looks like.... see if you can also plot the singularities
+        rs = [0, 2, 4]
+        ts = [0.5, 0.75, 1.0]
+        fig, ax = plt.subplots()
+        singularity_labeled = False
+        for r in rs:
+            for t in ts:
+                integrand = integrand_superposition_with_Gdot_axisymmetric_wave(
+                    rhos, r, t)
+                if not np_all(isclose(integrand, 0)):
+                    # compute singularity
+                    singularity = singularity_at_rho(t, r)
+                    if singularity >= 0:
+                        ax.vlines(
+                            singularity, *ylims, color="red",
+                            label="singularity" if not singularity_labeled else "")
+                        singularity_labeled = True
+
+                    # plot non zero integrands
+                    ax.plot(rhos, integrand, label=f"t={t}, r={r}")
+
+        ax.set_xlabel("rho")
+        ax.set_ylabel(
+            r"$\text{integrand}(\rho, r, t) = 2 \exp(-\rho^2) G_t(\rho, r, t)")
+        ax.set_ylim(*ylims)
+        ax.legend()
+
+        return
+
+    @skip
     def test_plot_fig3(self):
         """Numerically solve equation (9).
 
@@ -253,6 +291,10 @@ class TestAxisymmetricWaves(TestCase):
 
         plt.show()
         return
+
+    @classmethod
+    def tearDownClass(cls):
+        plt.show()
 
 
 if __name__ == "__main__":
