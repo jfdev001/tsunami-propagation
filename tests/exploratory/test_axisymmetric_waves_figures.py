@@ -226,7 +226,6 @@ class TestAxisymmetricWaves(TestCase):
 
         return
 
-    @skip
     def test_plot_fig3(self):
         """Numerically solve equation (9).
 
@@ -238,63 +237,53 @@ class TestAxisymmetricWaves(TestCase):
         """
         rs = linspace(0, 10, 100)
         t_a = [0.5, 0.75, 1.0, 1.5, 2.0, 5.0]
-        fig, axs = plt.subplots(2, 2, figsize=(15, 8))
+        fig, axs = plt.subplots(2, 1, figsize=(15, 8))
         rho_start = 0
         rho_stop = 3
-        rhos = linspace(rho_start, rho_stop, 100)
+
+        integrand = integrand_superposition_no_Gdot_axisymmetric_wave
 
         # plot fig3a
         t_a_to_r_to_wave_displacement = integrate_rho_for_ts_and_rs(
-            integrand_superposition_no_Gdot_axisymmetric_wave,
+            integrand,
             rho_start=rho_start, rho_stop=rho_stop, ts=t_a, rs=rs)
 
         for tix in range(len(t_a)):
             t = t_a[tix]
             r_to_wave_displacement = t_a_to_r_to_wave_displacement[tix]
-            axs[0, 0].plot(rs, r_to_wave_displacement, label=f"t={t}")
+            axs[0].plot(rs, r_to_wave_displacement, label=f"t={t}")
 
-        axs[0, 0].legend()
-        axs[0, 0].set_xlabel("r")
-        axs[0, 0].set_ylabel(r"wave displacement $\eta$")
-
-        # supplementary plot:
-        rs_subsample = [rs[0], rs[24], rs[49], rs[99]]
-        G = piecewise_G
-        t_to_r_to_Gs = []
-        for t in t_a:
-            r_to_Gs = []
-            for rix, r in enumerate(rs_subsample):
-                Gs = G(rhos, r, t)
-                axs[0, 1].plot(
-                    rhos, Gs, label=f"r={r}, t={t}")
-                r_to_Gs.append(Gs)
-            t_to_r_to_Gs.append(r_to_Gs)
-            break
-        axs[0, 1].legend()
-        axs[0, 1].set_xlabel("rho")
-        axs[0, 1].set_ylabel("G")
+        axs[0].legend()
 
         # plot fig3b
         t_b = [1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 40.0, 50.0]
         t_b_to_r_to_wave_displacement = integrate_rho_for_ts_and_rs(
-            integrand_superposition_no_Gdot_axisymmetric_wave,
+            integrand,
             rho_start=rho_start, rho_stop=rho_stop, ts=t_b, rs=rs)
 
         for tix in range(len(t_b)):
             t = t_b[tix]
             r_to_wave_displacement = t_b_to_r_to_wave_displacement[tix]
-            axs[1, 0].plot(rs, r_to_wave_displacement, label=f"t={t}")
+            axs[1].plot(rs, r_to_wave_displacement, label=f"t={t}")
 
-        axs[1, 0].legend()
-        axs[1, 0].set_xlabel("r")
-        axs[1, 0].set_ylabel(r"wave displacement $\eta$")
+        axs[1].legend()
+        axs[1].set_xlabel("r")
 
-        plt.show()
+        title = r"$\int_0^3 2\exp(-\rho^2)"
+        if "with_Gdot" in integrand.__name__:
+            title += r"G_t(\rho, r, t)$"
+        elif "no_Gdot" in integrand.__name__:
+            title += r"G(\rho, r, t)$"
+        else:
+            raise ValueError(f"unrecognized integrand: {integrand.__name__}")
+        fig.suptitle(title)
+
         return
 
     @classmethod
     def tearDownClass(cls):
         plt.show()
+        return
 
 
 if __name__ == "__main__":
