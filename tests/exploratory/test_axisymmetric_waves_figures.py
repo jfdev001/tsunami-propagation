@@ -220,7 +220,7 @@ class TestAxisymmetricWaves(TestCase):
 
         ax.set_xlabel("rho")
         ax.set_ylabel(
-            r"$\text{integrand}(\rho, r, t) = 2 \exp(-\rho^2) G_t(\rho, r, t)")
+            r"$\text{integrand}(\rho, r, t) = 2 \exp(-\rho^2) G_t(\rho, r, t)$")
         ax.set_ylim(*ylims)
         ax.legend()
 
