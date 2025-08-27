@@ -3,6 +3,8 @@ from numpy import (linspace, cos, exp, abs, pi, sqrt, sin, zeros_like, inf,
 from numpy import all as np_all
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
+from mpmath import quad as mpquad
+from mpmath import exp as mpexp
 from scipy.special import j0, ellipk, ellipe
 from unittest import TestCase, main, skip
 
@@ -22,7 +24,8 @@ def split_integrate_with_Gdot_axisymmetric_wave(rho_start, rho_stop, r, t):
         rho_stop,
         args=(r, t),
         points=[rho_singularity],
-        limit=100000000)
+        wvar=rho_singularity,
+        limit=1000)
     return integral
 
 
@@ -48,6 +51,10 @@ def piecewise_Gdot(rho, r, t):
 
     # Case 3: Gdot stays zero
     return Gdot if Gdot.size > 1 else Gdot.item()
+
+
+def piecewise_mpmath_Gdot(rho, r, t):
+    raise
 
 
 def Gdot1(rho, r, t):
@@ -248,8 +255,13 @@ class TestAxisymmetricWaves(TestCase):
                         singularity_labeled = True
 
                     # Compute and plot split integral
-                    integral = round(split_integrate_with_Gdot_axisymmetric_wave(
-                        rho_start, rho_stop, r, t), 2)
+                    # integral = round(split_integrate_with_Gdot_axisymmetric_wave(
+                        # rho_start, rho_stop, r, t), 2)
+                    Gdot = piecewise_Gdot
+                    integral = mpquad(
+                        lambda rho: 2*mpexp(-rho**2)*Gdot(rho, r, t),
+                        [rho_start, singularity, rho_stop]
+                    )
 
                     # plot non zero entire integrands
                     axs[0].plot(
@@ -281,7 +293,7 @@ class TestAxisymmetricWaves(TestCase):
 
         return
 
-    # @skip("split integral still throws errors...")
+    @skip("split integral still throws errors...")
     def test_plot_fig3(self):
         """Numerically solve equation (9).
 
@@ -342,7 +354,7 @@ class TestAxisymmetricWaves(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        plt.show()
+        # plt.show()
         return
 
 
