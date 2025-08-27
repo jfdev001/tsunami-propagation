@@ -22,7 +22,7 @@ def split_integrate_with_Gdot_axisymmetric_wave(rho_start, rho_stop, r, t):
         rho_stop,
         args=(r, t),
         points=[rho_singularity],
-        limit=500)
+        limit=100000000)
     return integral
 
 
@@ -115,7 +115,8 @@ def integrate_rho_for_ts_and_rs(
                 integrand,
                 rho_start,
                 rho_stop,
-                args=(r, t)
+                args=(r, t),
+                limit=1000,
             )
             r_to_wave_displacement.append(wave_displacement)
         t_to_r_to_wave_displacement.append(r_to_wave_displacement)
@@ -125,7 +126,7 @@ def integrate_rho_for_ts_and_rs(
 def compute_integral_of_rho_for_ts_and_rs(
         compute_integral, rho_start, rho_stop, ts, rs):
     """
-    Dirty copy with one change 
+    Dirty copy with one change
     """
     t_to_r_to_wave_displacement = []
     for t in ts:
@@ -223,7 +224,7 @@ class TestAxisymmetricWaves(TestCase):
 
     def test_integrate_integrand_superposition_with_Gdot_axisymmetric_wave(self):
         rho_start = 0
-        rho_stop = 1
+        rho_stop = 3
         rhos = linspace(rho_start, rho_stop, 500)
         ylims = (-100, 100)
 
@@ -239,7 +240,6 @@ class TestAxisymmetricWaves(TestCase):
                     rhos, r, t)
                 if not np_all(isclose(integrand, 0)):
                     singularity = singularity_at_rho(t, r)
-                    integral = ""
                     if singularity >= 0:
                         # Label the singularity
                         axs[0].vlines(
@@ -247,9 +247,9 @@ class TestAxisymmetricWaves(TestCase):
                             label="singularity" if not singularity_labeled else "")
                         singularity_labeled = True
 
-                        # Compute and plot split integral
-                        integral = round(split_integrate_with_Gdot_axisymmetric_wave(
-                            rho_start, rho_stop, r, t), 2)
+                    # Compute and plot split integral
+                    integral = round(split_integrate_with_Gdot_axisymmetric_wave(
+                        rho_start, rho_stop, r, t), 2)
 
                     # plot non zero entire integrands
                     axs[0].plot(
@@ -264,7 +264,7 @@ class TestAxisymmetricWaves(TestCase):
                         axs[1].plot(
                             parallel_positive_rhos,
                             positive_integrand,
-                            integrand, label=f"t={t}, r={r}, I={integral}")
+                            label=f"t={t}, r={r}, I={integral}")
 
         axs[0].set_title("entire domain of integrand")
         axs[0].set_ylim(*ylims)
@@ -281,7 +281,7 @@ class TestAxisymmetricWaves(TestCase):
 
         return
 
-    @skip("split integral still throws errors...")
+    # @skip("split integral still throws errors...")
     def test_plot_fig3(self):
         """Numerically solve equation (9).
 
@@ -297,15 +297,17 @@ class TestAxisymmetricWaves(TestCase):
         rho_start = 0
         rho_stop = 3
 
-        integrand = integrand_superposition_no_Gdot_axisymmetric_wave
+        integrand = integrand_superposition_simple_axisymmetric_wave
 
         # plot fig3a
-        t_a_to_r_to_wave_displacement = compute_integral_of_rho_for_ts_and_rs(
-            split_integrate_with_Gdot_axisymmetric_wave,
-            rho_start,
-            rho_stop,
-            t_a,
-            rs)
+        # t_a_to_r_to_wave_displacement = compute_integral_of_rho_for_ts_and_rs(
+        # split_integrate_with_Gdot_axisymmetric_wave,
+        # rho_start,
+        # rho_stop,
+        # t_a,
+        # rs)
+        t_a_to_r_to_wave_displacement = integrate_rho_for_ts_and_rs(
+            integrand, rho_start=rho_start, rho_stop=rho_stop, ts=t_a, rs=rs)
         for tix in range(len(t_a)):
             t = t_a[tix]
             r_to_wave_displacement = t_a_to_r_to_wave_displacement[tix]
