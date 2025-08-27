@@ -57,6 +57,7 @@ def piecewise_mpmath_Gdot(rho, r, t):
     raise
 
 
+# TODO: could have args for the callables to either np/scipy/mpath funcs
 def Gdot1(rho, r, t):
     """Equation (10) derivative with respect to `t` of the first piece.
 
