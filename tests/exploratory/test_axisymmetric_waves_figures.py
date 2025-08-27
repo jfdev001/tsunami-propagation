@@ -16,6 +16,7 @@ def integrand_superposition_simple_axisymmetric_wave(rho, r, t):
     return rho*j0(rho*r)*cos(rho*t)*exp((-rho**2)/4)
 
 
+# TODO: try better manually splitting... i.e., singularity +- some value...
 def split_integrate_with_Gdot_axisymmetric_wave(rho_start, rho_stop, r, t):
     rho_singularity = singularity_at_rho(t, r)
     integral, err = quad(
