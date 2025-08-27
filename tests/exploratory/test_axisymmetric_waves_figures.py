@@ -14,6 +14,30 @@ def integrand_superposition_simple_axisymmetric_wave(rho, r, t):
     return rho*j0(rho*r)*cos(rho*t)*exp((-rho**2)/4)
 
 
+def split_integrate_with_Gdot_axisymmetric_wave(rho_start, rho_stop, r, t):
+    rho_singularity = singularity_at_rho(t, r)
+    integral = None
+    if rho_singularity >= 0:
+        integral_part_one, err = quad(
+            integrand_superposition_with_Gdot_axisymmetric_wave,
+            rho_start,
+            rho_singularity,
+            args=(r, t))
+        integral_part_two, err = quad(
+            integrand_superposition_with_Gdot_axisymmetric_wave,
+            rho_stop,
+            rho_singularity,
+            args=(r, t))
+        integral = integral_part_one + integral_part_two
+    else:
+        integral, err = quad(
+            integrand_superposition_with_Gdot_axisymmetric_wave,
+            rho_start,
+            rho_stop,
+            args=(r, t))
+    return integral
+
+
 def integrand_superposition_with_Gdot_axisymmetric_wave(rho, r, t):
     """Integrand in Equation (8) from Carrier2005."""
     Gdot = piecewise_Gdot
@@ -106,6 +130,22 @@ def integrate_rho_for_ts_and_rs(
                 args=(r, t)
             )
             r_to_wave_displacement.append(wave_displacement)
+        t_to_r_to_wave_displacement.append(r_to_wave_displacement)
+    return t_to_r_to_wave_displacement
+
+
+def compute_integral_of_rho_for_ts_and_rs(
+        compute_integral, rho_start, rho_stop, ts, rs):
+    """
+    Dirty copy with one change 
+    """
+    raise NotImplementedError
+    t_to_r_to_wave_displacement = []
+    for t in ts:
+        r_to_wave_displacement = []
+        for r in rs:
+            integral = compute_integral(rho_start, rho_stop, t, r)
+            r_to_wave_displacement.append(integral)
         t_to_r_to_wave_displacement.append(r_to_wave_displacement)
     return t_to_r_to_wave_displacement
 
