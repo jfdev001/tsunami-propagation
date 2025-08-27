@@ -84,7 +84,7 @@ def piecewise_G(rho, r, t):
 
 def integrate_rho_for_ts_and_rs(
         integrand, rho_start, rho_stop, ts, rs):
-    """ 
+    """
     TODO: should probably do this with symbolic library?
     i.e., once integral is computed, then use d/dt ??...
     could do something like integrate Gdot1 to inf and
@@ -158,6 +158,8 @@ class TestAxisymmetricWaves(TestCase):
         axs[1].set_title(f"r = {r}")
         axs[1].legend()
 
+        fig.suptitle("Supplement (2): Green's Function and its Singularities")
+
         return
 
     def test_plot_fig2(self):
@@ -171,7 +173,7 @@ class TestAxisymmetricWaves(TestCase):
         fig2a_out = integrand_superposition_simple_axisymmetric_wave(
             rho, r, t)
         axs[0].plot(rho, fig2a_out, alpha=0.75)
-        axs[0].set_title("Different Integrands for t=102, r=100")
+        axs[0].set_title("Equation (7)")
 
         # 2b
         rho = linspace(0, 3, 500)
@@ -179,6 +181,7 @@ class TestAxisymmetricWaves(TestCase):
             rho, r, t)
         axs[1].plot(rho, fig2b_out)
         axs[1].set_ylim(-0.06, 0.06)
+        axs[1].set_title("Equation (8)")
 
         # 2c
         fig2c_out = integrand_superposition_no_Gdot_axisymmetric_wave(
@@ -186,8 +189,9 @@ class TestAxisymmetricWaves(TestCase):
         axs[2].plot(rho, fig2c_out)
 
         axs[2].set_xlabel("rho")
+        axs[2].set_title("Equation (9)")
 
-        # plt.show()
+        fig.suptitle("Figure (2): Different Integrands for t=102, r=100")
         return
 
     def test_integrate_integrand_superposition_with_Gdot_axisymmetric_wave(self):
@@ -219,8 +223,10 @@ class TestAxisymmetricWaves(TestCase):
                     ax.plot(rhos, integrand, label=f"t={t}, r={r}")
 
         ax.set_xlabel("rho")
-        ax.set_ylabel(
-            r"$\text{integrand}(\rho, r, t) = 2 \exp(-\rho^2) G_t(\rho, r, t)$")
+        ax.set_title(
+            "Supplement (3):\n"
+            r"$\text{integrand}(\rho, r, t) = 2 \exp(-\rho^2) G_t(\rho, r, t)$"
+            " with Singularities")
         ax.set_ylim(*ylims)
         ax.legend()
 
@@ -229,7 +235,7 @@ class TestAxisymmetricWaves(TestCase):
     def test_plot_fig3(self):
         """Numerically solve equation (9).
 
-        TODO: The Green function has a known singularity!! 
+        TODO: The Green function has a known singularity!!
         Carrier2002 "Tsunami Run-up and Draw-Down on a Plane Beach"....
         could either (a) split integral to perform integration? or (b)
         try and see about ISML software? since this what's recommneded in the
@@ -237,7 +243,7 @@ class TestAxisymmetricWaves(TestCase):
         """
         rs = linspace(0, 10, 100)
         t_a = [0.5, 0.75, 1.0, 1.5, 2.0, 5.0]
-        fig, axs = plt.subplots(2, 1, figsize=(15, 8))
+        fig, axs = plt.subplots(2, 1, figsize=(6, 8))
         rho_start = 0
         rho_stop = 3
 
@@ -276,7 +282,7 @@ class TestAxisymmetricWaves(TestCase):
             title += r"G(\rho, r, t)$"
         else:
             raise ValueError(f"unrecognized integrand: {integrand.__name__}")
-        fig.suptitle(title)
+        fig.suptitle(f"Figure (3): {title}")
 
         return
 
