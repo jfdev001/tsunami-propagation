@@ -1,14 +1,18 @@
+from argparse import ArgumentParser
+import matplotlib.pyplot as plt
+from mpmath import quad as mpquad
+from mpmath import exp as mpexp
 from numpy import (linspace, cos, exp, abs, pi, sqrt, sin, zeros_like, inf,
                    atleast_1d, isclose)
 from numpy import all as np_all
-import matplotlib.pyplot as plt
-from scipy.integrate import quad
-from mpmath import quad as mpquad
-from mpmath import exp as mpexp
+from scipy.integrate import quad, IntegrationWarning
 from scipy.special import j0, ellipk, ellipe
 from unittest import TestCase, main, skip
+from warnings import simplefilter
 
 from pdb import set_trace
+
+simplefilter("always", IntegrationWarning)
 
 
 def integrand_superposition_simple_axisymmetric_wave(rho, r, t):
@@ -16,17 +20,39 @@ def integrand_superposition_simple_axisymmetric_wave(rho, r, t):
     return rho*j0(rho*r)*cos(rho*t)*exp((-rho**2)/4)
 
 
-# TODO: try better manually splitting... i.e., singularity +- some value...
-def split_integrate_with_Gdot_axisymmetric_wave(rho_start, rho_stop, r, t):
+# TODO: could have adaptive delta... i.e., proportion of singularity or try
+# until no integration warning???
+def split_integrate_with_Gdot_axisymmetric_wave(
+        rho_start: float, rho_stop: float,
+        r: float, t: float,
+        use_manual_splitting: bool,
+        singularity_delta: float,
+        **quad_kwargs):
     rho_singularity = singularity_at_rho(t, r)
-    integral, err = quad(
-        integrand_superposition_with_Gdot_axisymmetric_wave,
-        rho_start,
-        rho_stop,
-        args=(r, t),
-        points=[rho_singularity],
-        wvar=rho_singularity,
-        limit=1000)
+    # use quad builtin in splitting
+    if not use_manual_splitting:
+        integral, err = quad(
+            integrand_superposition_with_Gdot_axisymmetric_wave,
+            rho_start,
+            rho_stop,
+            args=(r, t),
+            points=[rho_singularity],
+            **quad_kwargs)
+    # manually split integral
+    else:
+        integral_one, err_one = quad(
+            integrand_superposition_with_Gdot_axisymmetric_wave,
+            rho_start,
+            rho_singularity - singularity_delta,
+            args=(r, t),
+            **quad_kwargs)
+        integral_two, err_two = quad(
+            integrand_superposition_with_Gdot_axisymmetric_wave,
+            rho_singularity + singularity_delta,
+            rho_stop,
+            args=(r, t),
+            **quad_kwargs)
+        integral = integral_one + integral_two
     return integral
 
 
@@ -256,14 +282,20 @@ class TestAxisymmetricWaves(TestCase):
                             label="singularity" if not singularity_labeled else "")
                         singularity_labeled = True
 
-                    # Compute and plot split integral
-                    # integral = round(split_integrate_with_Gdot_axisymmetric_wave(
-                        # rho_start, rho_stop, r, t), 2)
-                    Gdot = piecewise_Gdot
-                    integral = mpquad(
-                        lambda rho: 2*mpexp(-rho**2)*Gdot(rho, r, t),
-                        [rho_start, singularity, rho_stop]
-                    )
+                        # Compute and plot split integral
+                        integral = split_integrate_with_Gdot_axisymmetric_wave(
+                            rho_start, rho_stop, r, t,
+                            use_manual_splitting=True,
+                            # potential for catastrophic subtraction...
+                            singularity_delta=1E-5,
+                            limit=1000)
+                    else:
+                        integral, err = quad(
+                            integrand_superposition_with_Gdot_axisymmetric_wave,
+                            rho_start, rho_stop, args=(r, t))
+
+                    round_digits_to_n_places = 2
+                    integral = round(integral, round_digits_to_n_places)
 
                     # plot non zero entire integrands
                     axs[0].plot(
@@ -356,9 +388,12 @@ class TestAxisymmetricWaves(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        # plt.show()
+        plt.show()
         return
 
 
 if __name__ == "__main__":
+    # parser = ArgumentParser("additional args for testing")
+    # parser.add_argument("flag", required=True)
+    # args = parser.parse_args()
     main()
