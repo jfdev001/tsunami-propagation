@@ -20,10 +20,19 @@ subscript idenotes partial differentiation.
 
 For figures 2 and 3, the below equations are relevant:
 
+Exact integral representation of wave displacement,
+
+$$
+\eta(r, t) = \int_0^\infty \rho J_0(\rho r)\ \cos(\rho t)\ \exp(\frac{-\rho^2}{4})\ d\rho.  \tag{eq. 7}
+$$
+
+The above equation using the Bessel function of the first kind of order 0 can be
+rewritten as below:
+
 Wave displacement *with* time derivative in the integrand,
 
 $$
-\eta(r, t) = \int_{0}^{\infty} 2 \exp(-\rho^2) G_t(\rho, r, t)\ d\rho \tag{eq. 8}
+\eta(r, t) = \int_{0}^{\infty} 2 \exp(-\rho^2) G_t(\rho, r, t)\ d\rho, \tag{eq. 8}
 $$
 
 where 
@@ -36,7 +45,7 @@ G(\rho, r, t) = \begin{cases}
 \end{cases}
 $$
 
-and 
+and $K$ is the Complete Elliptical Integral of the first kind, 
 
 $$
 K(k) = \int_{0}^{\pi / 2} \frac{dv}{\sqrt{1 - k \sin^2 v}}.
@@ -45,7 +54,7 @@ $$
 The wave displacement *without* time derivative in the integrand, 
 
 $$
-\eta(r, t) = \frac{\partial}{\partial t}\int_{0}^{\infty} 2 \exp(-\rho^2) G(\rho, r, t)\ d\rho \tag{eq. 9}
+\eta(r, t) = \frac{\partial}{\partial t}\int_{0}^{\infty} 2 \exp(-\rho^2) G(\rho, r, t)\ d\rho. \tag{eq. 9}
 $$
 
 # References
