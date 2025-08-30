@@ -16,7 +16,7 @@ from pdb import set_trace
 simplefilter("always", IntegrationWarning)
 
 
-def integrand_superposition_simple_axisymmetric_wave(rho, r, t):
+def integrand_superposition_bessel_axisymmetric_wave(rho, r, t):
     """Integrand in Equation (7) from Carrier2005."""
     return rho*j0(rho*r)*cos(rho*t)*exp((-rho**2)/4)
 
@@ -152,7 +152,7 @@ def integrate_rho_for_ts_and_rs(
                 rho_start,
                 rho_stop,
                 args=(r, t),
-                limit=1000,
+                limit=50,
             )
             r_to_wave_displacement.append(wave_displacement)
         t_to_r_to_wave_displacement.append(r_to_wave_displacement)
@@ -317,7 +317,7 @@ class TestAxisymmetricWaves(TestCase):
 
         # 2a
         rho = linspace(0, 5, 840)
-        fig2a_out = integrand_superposition_simple_axisymmetric_wave(
+        fig2a_out = integrand_superposition_bessel_axisymmetric_wave(
             rho, r, t)
         axs[0].plot(rho, fig2a_out, alpha=0.75)
         axs[0].set_title("Equation (7)")
@@ -349,7 +349,7 @@ class TestAxisymmetricWaves(TestCase):
             r"$\text{integrand}(\rho, r, t) = \rho\ J_0(\rho r)\ \cos(\rho t)\ \exp(\frac{-\rho^2}{4})$"
         )
         include_singularities = False
-        compute_integrand = integrand_superposition_simple_axisymmetric_wave
+        compute_integrand = integrand_superposition_bessel_axisymmetric_wave
         fig, axs = plot_sanity_checked_integrand(
             compute_integrand, suptitle, include_singularities)
         plot_hlines_through_origin(axs)
@@ -375,33 +375,23 @@ class TestAxisymmetricWaves(TestCase):
         plot_hlines_through_origin(axs)
         return
 
-    def test_plot_integral_of_axisymmetric_wave_integrand(self):
-        """Reproduce figure 3 from Carrier 2005 
+    def test_plot_integral_of_axisymmetric_wave_integrand_with_bessel_func(self):
+        """Reproduce figure 3 from Carrier 2005  -- evolution of wave surface
 
-        TODO: The Green function has a known singularity!!
-        Carrier2002 "Tsunami Run-up and Draw-Down on a Plane Beach"....
-        could either (a) split integral to perform integration? or (b)
-        try and see about ISML software? since this what's recommneded in the
-        paper...
-
-        TODO: maybe move this also into another function so that you can
-        plug and play with different integrands...
+        IMPORTANT: I use equation (7), i.e., the equation with the bessel
+        function rather than the reported equation (9). Not even sure
+        how one would use equation (9)... this warrants an overflow
+        question
         """
-        integrand = integrand_superposition_simple_axisymmetric_wave
+        integrand = integrand_superposition_bessel_axisymmetric_wave
 
         rs = linspace(0, 10, 100)
         t_a = [0.5, 0.75, 1.0, 1.5, 2.0, 5.0]
-        fig, axs = plt.subplots(2, 1, figsize=(6, 8))
+        fig, axs = plt.subplots(2, 1, figsize=(6, 10))
         rho_start = 0
         rho_stop = 3
 
         # plot fig3a
-        # t_a_to_r_to_wave_displacement = compute_integral_of_rho_for_ts_and_rs(
-        # split_integrate_with_Gdot_axisymmetric_wave,
-        # rho_start,
-        # rho_stop,
-        # t_a,
-        # rs)
         t_a_to_r_to_wave_displacement = integrate_rho_for_ts_and_rs(
             integrand, rho_start=rho_start, rho_stop=rho_stop, ts=t_a, rs=rs)
         for tix in range(len(t_a)):
@@ -412,6 +402,7 @@ class TestAxisymmetricWaves(TestCase):
         axs[0].legend()
 
         # plot fig3b
+        rs = linspace(0, 50, 225)
         t_b = [1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 40.0, 50.0]
         t_b_to_r_to_wave_displacement = integrate_rho_for_ts_and_rs(
             integrand,
@@ -425,16 +416,20 @@ class TestAxisymmetricWaves(TestCase):
         axs[1].legend()
         axs[1].set_xlabel("r")
 
-        title = r"$\int_0^3 2\exp(-\rho^2)"
+        title = r"$\eta = \int_0^3 2\exp(-\rho^2)"
         if "with_Gdot" in integrand.__name__:
             title += r"G_t(\rho, r, t)$"
         elif "no_Gdot" in integrand.__name__:
             title += r"G(\rho, r, t)$"
-        elif "simple" in integrand.__name__:
-            title = r"$\int_0^3 \rho\ J_0(\rho r)\ \cos(\rho t)\ \exp(\frac{-\rho^2}{4})$"
+        elif "bessel" in integrand.__name__:
+            title = r"$\eta = \int_0^3 \rho\ J_0(\rho r)\ \cos(\rho t)\ \exp(\frac{-\rho^2}{4})\ d\rho$"
         else:
             raise ValueError(f"unrecognized integrand: {integrand.__name__}")
-        fig.suptitle(f"Figure (3): {title}")
+        fig.suptitle((
+            "Figure (3): Evolution\nof Radiating Water-Surface Profiles\n"
+            " by Solving Equation (7)\n"
+            f"{title}"
+        ))
 
         plot_hlines_through_origin(axs)
         return
