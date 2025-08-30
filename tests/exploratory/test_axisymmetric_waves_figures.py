@@ -8,6 +8,7 @@ from numpy import all as np_all
 from scipy.integrate import quad, IntegrationWarning
 from scipy.special import j0, ellipk, ellipe
 from unittest import TestCase, main, skip
+from typing import Callable
 from warnings import simplefilter
 
 from pdb import set_trace
@@ -190,8 +191,91 @@ def singularity_at_rho(t, r):
     return t - r
 
 
+def plot_sanity_checked_integrand(
+        compute_integrand: Callable,
+        suptitle: str,
+        include_singularities: bool,
+        rho_start: float = 0,
+        rho_stop: float = 3,
+        n_rho_points: int = 500,
+        rs: list[float] = [0, 2, 4],
+        ts: list[float] = [0.5, 0.75, 1.0],
+        ylims: tuple[float] = tuple(),
+        **split_integrate_kwargs) -> tuple:
+    """
+    args:
+        compute_integrand: Func with params for rho, r, t
+    """
+    rhos = linspace(rho_start, rho_stop, n_rho_points)
+    if len(split_integrate_kwargs) == 0:
+        split_integrate_kwargs = dict(
+            use_manual_splitting=True,
+            singularity_delta=1E-5)
+
+    fig, axs = plt.subplots(2, 1, figsize=(6, 10))
+    singularity_labeled_in_legend = False
+    for r in rs:
+        for t in ts:
+            integrand = compute_integrand(rhos, r, t)
+            if not np_all(isclose(integrand, 0)):
+                singularity = singularity_at_rho(t, r)
+                if singularity >= 0:
+                    if include_singularities:
+                        axs[0].vlines(
+                            singularity,
+                            min(integrand), max(integrand),
+                            color="red",
+                            label="singularity"
+                            if not singularity_labeled_in_legend else "")
+                        singularity_labeled_in_legend = True
+
+                    # Compute and plot split integral
+                    integral = split_integrate_with_Gdot_axisymmetric_wave(
+                        rho_start, rho_stop, r, t,
+                        **split_integrate_kwargs)
+                else:
+                    integral, err = quad(
+                        integrand_superposition_with_Gdot_axisymmetric_wave,
+                        rho_start, rho_stop, args=(r, t))
+
+                round_digits_to_n_places = 2
+                integral = round(integral, round_digits_to_n_places)
+
+                # plot non zero entire integrands
+                axs[0].plot(
+                    rhos,
+                    integrand, label=f"t={t}, r={r}, I={integral}")
+
+                # plot only positive part
+                positive_integrand_mask = integrand > 0
+                positive_integrand = integrand[positive_integrand_mask]
+                parallel_positive_rhos = rhos[positive_integrand_mask]
+                if positive_integrand.shape[0] > 0:
+                    axs[1].plot(
+                        parallel_positive_rhos,
+                        positive_integrand,
+                        label=f"t={t}, r={r}, I={integral}")
+
+    axs[0].set_title("entire domain of integrand")
+    axs[0].set_ylim(*ylims)
+    axs[0].legend()
+
+    axs[1].set_title("positive parts of integrands")
+    axs[1].legend()
+
+    fig.supxlabel("rho")
+    fig.suptitle(suptitle)
+    return fig, axs
+
+
+def plot_hlines_through_origin(axs) -> None:
+    for ax in axs:
+        ax.axhline(0, color="black")
+    return
+
+
 class TestAxisymmetricWaves(TestCase):
-    def test_plot_fig2_carrier2002(self):
+    def test_plot_fig2_greens_func_and_discontinuities(self):
         """Reproduce figure 2 from Carrier2002, Green's function and discontin.
 
         G(b, sigma, lambda) == G(rho, r, t)
@@ -225,7 +309,7 @@ class TestAxisymmetricWaves(TestCase):
 
         return
 
-    def test_plot_fig2(self):
+    def test_plot_different_integrands_at_fixed_t_and_r(self):
         """Reproduce figure (2) from Carrier 2005."""
         t = 102
         r = 100
@@ -255,95 +339,61 @@ class TestAxisymmetricWaves(TestCase):
         axs[2].set_title("Equation (9)")
 
         fig.suptitle("Figure (2): Different Integrands for t=102, r=100")
+
+        plot_hlines_through_origin(axs)
         return
 
-    def test_integrate_integrand_superposition_with_Gdot_axisymmetric_wave(self):
-        rho_start = 0
-        rho_stop = 3
-        rhos = linspace(rho_start, rho_stop, 500)
-        ylims = (-100, 100)
+    def test_plot_sanity_check_bessel_integrand_and_computed_integrals(self):
+        suptitle = (
+            "Supplement (3.2):\n"
+            r"$\text{integrand}(\rho, r, t) = \rho\ J_0(\rho r)\ \cos(\rho t)\ \exp(\frac{-\rho^2}{4})$"
+        )
+        include_singularities = False
+        compute_integrand = integrand_superposition_simple_axisymmetric_wave
+        fig, axs = plot_sanity_checked_integrand(
+            compute_integrand, suptitle, include_singularities)
+        plot_hlines_through_origin(axs)
+        return
 
-        # plot the integrand for a couple different ts and rs to see
-        # what this looks like.... see if you can also plot the singularities
-        rs = [0, 2, 4]
-        ts = [0.5, 0.75, 1.0]
-        fig, axs = plt.subplots(2, 1, figsize=(6, 10))
-        singularity_labeled = False
-        for r in rs:
-            for t in ts:
-                integrand = integrand_superposition_with_Gdot_axisymmetric_wave(
-                    rhos, r, t)
-                if not np_all(isclose(integrand, 0)):
-                    singularity = singularity_at_rho(t, r)
-                    if singularity >= 0:
-                        # Label the singularity
-                        axs[0].vlines(
-                            singularity, *ylims, color="red",
-                            label="singularity" if not singularity_labeled else "")
-                        singularity_labeled = True
+    def test_plot_sanity_check_Gdot_integrand_and_computed_integrals(self):
+        """
+        Plot the integrand with Gdot if values are not 0 for ts and rs.
+        Mark the computed singularity with a vertical. Then compute the the
+        integral to sanity check values.
+        """
 
-                        # Compute and plot split integral
-                        integral = split_integrate_with_Gdot_axisymmetric_wave(
-                            rho_start, rho_stop, r, t,
-                            use_manual_splitting=True,
-                            # potential for catastrophic subtraction...
-                            singularity_delta=1E-5,
-                            limit=1000)
-                    else:
-                        integral, err = quad(
-                            integrand_superposition_with_Gdot_axisymmetric_wave,
-                            rho_start, rho_stop, args=(r, t))
-
-                    round_digits_to_n_places = 2
-                    integral = round(integral, round_digits_to_n_places)
-
-                    # plot non zero entire integrands
-                    axs[0].plot(
-                        rhos,
-                        integrand, label=f"t={t}, r={r}, I={integral}")
-
-                    # plot only positive part
-                    positive_integrand_mask = integrand > 0
-                    positive_integrand = integrand[positive_integrand_mask]
-                    parallel_positive_rhos = rhos[positive_integrand_mask]
-                    if positive_integrand.shape[0] > 0:
-                        axs[1].plot(
-                            parallel_positive_rhos,
-                            positive_integrand,
-                            label=f"t={t}, r={r}, I={integral}")
-
-        axs[0].set_title("entire domain of integrand")
-        axs[0].set_ylim(*ylims)
-        axs[0].legend()
-
-        axs[1].set_title("positive parts of integrands")
-        axs[1].legend()
-
-        fig.supxlabel("rho")
-        fig.suptitle(
-            "Supplement (3):\n"
+        suptitle = (
+            "Supplement (3.1):\n"
             r"$\text{integrand}(\rho, r, t) = 2 \exp(-\rho^2) G_t(\rho, r, t)$"
-            " with Singularities")
-
+            " with Singularities"
+        )
+        include_singularities = True
+        ylims = (-100, 100)
+        compute_integrand = integrand_superposition_with_Gdot_axisymmetric_wave
+        fig, axs = plot_sanity_checked_integrand(compute_integrand, suptitle,
+                                                 include_singularities, ylims=ylims)
+        plot_hlines_through_origin(axs)
         return
 
-    @skip("split integral still throws errors...")
-    def test_plot_fig3(self):
-        """Numerically solve equation (9).
+    def test_plot_integral_of_axisymmetric_wave_integrand(self):
+        """Reproduce figure 3 from Carrier 2005 
 
         TODO: The Green function has a known singularity!!
         Carrier2002 "Tsunami Run-up and Draw-Down on a Plane Beach"....
         could either (a) split integral to perform integration? or (b)
         try and see about ISML software? since this what's recommneded in the
         paper...
+
+        TODO: maybe move this also into another function so that you can
+        plug and play with different integrands...
         """
+        integrand = integrand_superposition_simple_axisymmetric_wave
+
         rs = linspace(0, 10, 100)
         t_a = [0.5, 0.75, 1.0, 1.5, 2.0, 5.0]
         fig, axs = plt.subplots(2, 1, figsize=(6, 8))
         rho_start = 0
         rho_stop = 3
-
-        integrand = integrand_superposition_simple_axisymmetric_wave
 
         # plot fig3a
         # t_a_to_r_to_wave_displacement = compute_integral_of_rho_for_ts_and_rs(
@@ -380,10 +430,13 @@ class TestAxisymmetricWaves(TestCase):
             title += r"G_t(\rho, r, t)$"
         elif "no_Gdot" in integrand.__name__:
             title += r"G(\rho, r, t)$"
+        elif "simple" in integrand.__name__:
+            title = r"$\int_0^3 \rho\ J_0(\rho r)\ \cos(\rho t)\ \exp(\frac{-\rho^2}{4})$"
         else:
             raise ValueError(f"unrecognized integrand: {integrand.__name__}")
         fig.suptitle(f"Figure (3): {title}")
 
+        plot_hlines_through_origin(axs)
         return
 
     @classmethod
