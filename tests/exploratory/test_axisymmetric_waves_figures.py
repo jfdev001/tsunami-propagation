@@ -59,11 +59,11 @@ def split_integrate_with_Gdot_axisymmetric_wave(
 
 def integrand_superposition_with_Gdot_axisymmetric_wave(rho, r, t):
     """Integrand in Equation (8) from Carrier2005."""
-    Gdot = piecewise_Gdot
+    Gdot = greens_function_dt
     return 2*exp(-rho**2)*Gdot(rho, r, t)
 
 
-def piecewise_Gdot(rho, r, t):
+def greens_function_dt(rho, r, t):
     rho = atleast_1d(rho)
     Gdot = zeros_like(rho, dtype=float)
 
@@ -104,12 +104,12 @@ def Gdot2(rho, r, t):
 
 def integrand_superposition_no_Gdot_axisymmetric_wave(rho, r, t):
     """Integrand in Equation (9) from Carrier2005."""
-    G = piecewise_G
+    G = greens_function
     integrand = 2*exp(-rho**2)*G(rho, r, t)
     return integrand
 
 
-def piecewise_G(rho, r, t):
+def greens_function(rho, r, t):
     """Equation (10) from Carrier (2005)"""
     rho = atleast_1d(rho)
     G = zeros_like(rho, dtype=float)
@@ -174,8 +174,8 @@ def compute_integral_of_rho_for_ts_and_rs(
     return t_to_r_to_wave_displacement
 
 
-def plot_singularities(ax, rhos, r, ts):
-    G = piecewise_G
+def plot_singularities_in_greens_function(ax, rhos, r, ts):
+    G = greens_function
     Gs = [G(rhos, r, t) for t in ts]
     for ix, t in enumerate(ts):
         singularity = singularity_at_rho(t, r)
@@ -284,13 +284,13 @@ class TestAxisymmetricWaves(TestCase):
         fig, axs = plt.subplots(2, 1, figsize=(6, 10))
         fig.suptitle("Singularities of Green's Function")
 
-        G = piecewise_G
+        G = greens_function
 
         # From carrier2002
         ts = lambdas = [0.1, 0.2, 0.3, 0.4, 0.5]
         r = sigma = 0.05
         rhos = bs = linspace(0, 1, 100)
-        plot_singularities(axs[0], rhos, r, ts)
+        plot_singularities_in_greens_function(axs[0], rhos, r, ts)
         axs[0].set_ylabel("G")
         axs[0].set_title(f"r = {r}")
         axs[0].legend()
@@ -299,7 +299,7 @@ class TestAxisymmetricWaves(TestCase):
         ts = [102]
         r = 100
         rhos = linspace(0, 3, 500)
-        plot_singularities(axs[1], rhos, r, ts)
+        plot_singularities_in_greens_function(axs[1], rhos, r, ts)
         axs[1].set_xlabel("rho")
         axs[1].set_ylabel("G")
         axs[1].set_title(f"r = {r}")
