@@ -1,20 +1,21 @@
-"""
+"""Exploratory tests and functions to reproduce figures in Carrier2005
+
+Once you figure out the implementation of the closed form solution to the 
+wave displacement, then you can transfer the  contents of this file
+to a proper scripts directory.
 
 TODO:
     * should rename to reflect wave_displacment
     * Should clean up this and put some functions probably in source dir
 """
-from argparse import ArgumentParser
 import matplotlib.pyplot as plt
-from mpmath import quad as mpquad
-from mpmath import exp as mpexp
-from numpy import (linspace, cos, exp, abs, pi, sqrt, sin, zeros_like, inf,
+from numpy import (linspace, cos, exp, abs, pi, sqrt, zeros_like, inf,
                    atleast_1d, isclose)
 from numpy import all as np_all
 from scipy.integrate import quad, IntegrationWarning
 from scipy.special import j0, ellipk, ellipe
 from unittest import TestCase, main, skip
-from typing import Callable
+from typing import Callable, Union
 from warnings import simplefilter
 
 from pdb import set_trace
@@ -22,14 +23,16 @@ from pdb import set_trace
 simplefilter("always", IntegrationWarning)
 
 
-def compute_bessel_wave_function_integral(rho_start, rho_stop, r, t):
+def compute_bessel_wave_function_integral(
+        rho_start, rho_stop, r, t, **quad_kwargs):
     """Integrate equation (7) from Carrier2005"""
     integral, err = quad(
         integrand_superposition_bessel_axisymmetric_wave,
         rho_start,
         rho_stop,
-        args=(r, t))
-    return integral
+        args=(r, t),
+        **quad_kwargs)
+    return integral, err
 
 
 def integrand_superposition_bessel_axisymmetric_wave(rho, r, t):
@@ -294,13 +297,20 @@ def plot_hlines_through_origin(axs) -> None:
     return
 
 
+def plot_vlines_through_origin(axs) -> None:
+    for ax in axs:
+        ax.axvline(0, color="black")
+    return
+
+
 def compute_ordinate_of_wave_function(
         which_ordinate: str,
         rho_start: float,
         rho_stop: float,
-        r: float,
+        r: Union[float, list[float]],
         t: float,
-        compute_wave_function_integral: Callable = compute_bessel_wave_function_integral):
+        compute_wave_function_integral: Callable = compute_bessel_wave_function_integral,
+        **compute_wave_function_integral_kwargs):
     ordinate_scalar = 50
     t_ordinate = "t"
     r_ordinate = "r"
@@ -312,7 +322,8 @@ def compute_ordinate_of_wave_function(
         ordinate = sqrt(r/ordinate_scalar)
     else:
         raise ValueError
-    integral, _ = compute_wave_function_integral(rho_start, rho_stop, r, t)
+    integral, _ = compute_wave_function_integral(
+        rho_start, rho_stop, r, t, **compute_wave_function_integral_kwargs)
     return ordinate*integral
 
 
@@ -476,12 +487,34 @@ class TestAxisymmetricWaves(TestCase):
         plot_hlines_through_origin(axs)
         return
 
-    def plot_ordinates_of_wave_function(self):
+    def test_plot_ordinates_of_wave_function(self):
         """Reproduce figure (4) from Carrier 2005 """
         ts = [5, 10, 20, 50, 100]
         rs = linspace(0, 50, 225)
         rho_start = 0
-        rho_stop = 3
+        rho_stop = inf
+
+        def compute_ordinate_x_axis(r, t):
+            return (r**2 - t**2)/4*r
+        xs = [compute_ordinate_x_axis(rs, t) for t in ts]
+        fig, axs = plt.subplots(2, 1, figsize=(6, 10))
+        for x, t in zip(xs, ts):
+            r_to_wave_profile = [
+                compute_ordinate_of_wave_function(
+                    which_ordinate="r",
+                    rho_start=rho_start,
+                    rho_stop=rho_stop,
+                    r=r,
+                    t=t,
+                    limit=250)
+                for r in rs]
+            assert len(r_to_wave_profile) == len(x)
+            axs[0].plot(x, r_to_wave_profile, label=f"t={t}")
+        axs[0].set_ylim(-0.04, 0.1)
+        axs[0].set_xlim(-2, 2)
+        axs[0].legend()
+        plot_hlines_through_origin(axs)
+        plot_vlines_through_origin(axs)
         return
 
     @classmethod
