@@ -358,9 +358,9 @@ def compute_analytic_recipe(s):
     s2_prod = compute_s_prod(s2)
     f_of_s[mask2] = (
         s2_prod * (kv(order, 2*s2**2) + pi * sqrt(2)*iv(order, 2*s2**2)))
-    # simply take slope between two points
-    deriv = (f_of_s[1:-1] - f_of_s[0:-2])/(s[1:-1] - s[0:-2])
-    return -0.0238*deriv
+    # backward difference scheme f'i = (fi - fi-1)/delta_s
+    df_ds = (f_of_s[1:] - f_of_s[0:-1])/(s[1:] - s[0:-1])
+    return -0.0238*df_ds
 
 
 class TestAxisymmetricWaves(TestCase):
@@ -565,11 +565,10 @@ class TestAxisymmetricWaves(TestCase):
         s = linspace(-5, 3, 200)
         recipe = compute_analytic_recipe(s)
         fig, ax = plt.subplots()
-        # because recipe computes a derivative, i.e., slope between two points,
-        # plotting the midpoint between consecutive s points is still accurate
-        # since the midpoint lies also on the slope
-        midpoint_s = (s[1:-1] + s[0:-2])/2
-        ax.plot(midpoint_s, recipe, label="M(s)")
+        # because recipe computes a backward difference, therefore
+        # f'i is at upstream point i
+        downstream_s = s[1:]
+        ax.plot(downstream_s, recipe, label="M(s)")
         ax.set_title(
             "Figure (5): Analytic Recipe and Ordinate Scaled Wave Equation")
         ax.set_xlim(-5, 3)
