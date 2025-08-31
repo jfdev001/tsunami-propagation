@@ -1,3 +1,9 @@
+"""
+
+TODO:
+    * should rename to reflect wave_displacment
+    * Should clean up this and put some functions probably in source dir
+"""
 from argparse import ArgumentParser
 import matplotlib.pyplot as plt
 from mpmath import quad as mpquad
@@ -14,6 +20,16 @@ from warnings import simplefilter
 from pdb import set_trace
 
 simplefilter("always", IntegrationWarning)
+
+
+def compute_bessel_wave_function_integral(rho_start, rho_stop, r, t):
+    """Integrate equation (7) from Carrier2005"""
+    integral, err = quad(
+        integrand_superposition_bessel_axisymmetric_wave,
+        rho_start,
+        rho_stop,
+        args=(r, t))
+    return integral
 
 
 def integrand_superposition_bessel_axisymmetric_wave(rho, r, t):
@@ -131,7 +147,7 @@ def greens_function(rho, r, t):
 
 
 def integrate_rho_for_ts_and_rs(
-        integrand, rho_start, rho_stop, ts, rs):
+        integrand, rho_start, rho_stop, ts, rs, **quad_kwargs):
     """
     TODO: should probably do this with symbolic library?
     i.e., once integral is computed, then use d/dt ??...
@@ -143,6 +159,10 @@ def integrate_rho_for_ts_and_rs(
     those... or analyze plots of integrand no gdot
     and visually identify discontinuities...
     """
+    if len(quad_kwargs) == 0:
+        quad_kwargs = dict(limit=150)
+    else:
+        assert quad_kwargs["limit"] >= 150, "minimum limit to get convergence"
     t_to_r_to_wave_displacement = []
     for t in ts:
         r_to_wave_displacement = []
@@ -152,7 +172,7 @@ def integrate_rho_for_ts_and_rs(
                 rho_start,
                 rho_stop,
                 args=(r, t),
-                limit=50,
+                **quad_kwargs,
             )
             r_to_wave_displacement.append(wave_displacement)
         t_to_r_to_wave_displacement.append(r_to_wave_displacement)
@@ -274,6 +294,28 @@ def plot_hlines_through_origin(axs) -> None:
     return
 
 
+def compute_ordinate_of_wave_function(
+        which_ordinate: str,
+        rho_start: float,
+        rho_stop: float,
+        r: float,
+        t: float,
+        compute_wave_function_integral: Callable = compute_bessel_wave_function_integral):
+    ordinate_scalar = 50
+    t_ordinate = "t"
+    r_ordinate = "r"
+    valid_ordinates = [t_ordinate, r_ordinate]
+    assert which_ordinate in valid_ordinates
+    if which_ordinate == t_ordinate:
+        ordinate = sqrt(t/ordinate_scalar)
+    elif which_ordinate == r_ordinate:
+        ordinate = sqrt(r/ordinate_scalar)
+    else:
+        raise ValueError
+    integral, _ = compute_wave_function_integral(rho_start, rho_stop, r, t)
+    return ordinate*integral
+
+
 class TestAxisymmetricWaves(TestCase):
     def test_plot_fig2_greens_func_and_discontinuities(self):
         """Reproduce figure 2 from Carrier2002, Green's function and discontin.
@@ -389,7 +431,7 @@ class TestAxisymmetricWaves(TestCase):
         t_a = [0.5, 0.75, 1.0, 1.5, 2.0, 5.0]
         fig, axs = plt.subplots(2, 1, figsize=(6, 10))
         rho_start = 0
-        rho_stop = 3
+        rho_stop = inf
 
         # plot fig3a
         t_a_to_r_to_wave_displacement = integrate_rho_for_ts_and_rs(
@@ -416,13 +458,13 @@ class TestAxisymmetricWaves(TestCase):
         axs[1].legend()
         axs[1].set_xlabel("r")
 
-        title = r"$\eta = \int_0^3 2\exp(-\rho^2)"
+        title = r"$\eta = \int_0^{\infty} 2\exp(-\rho^2)"
         if "with_Gdot" in integrand.__name__:
             title += r"G_t(\rho, r, t)$"
         elif "no_Gdot" in integrand.__name__:
             title += r"G(\rho, r, t)$"
         elif "bessel" in integrand.__name__:
-            title = r"$\eta = \int_0^3 \rho\ J_0(\rho r)\ \cos(\rho t)\ \exp(\frac{-\rho^2}{4})\ d\rho$"
+            title = r"$\eta = \int_0^{\infty} \rho\ J_0(\rho r)\ \cos(\rho t)\ \exp(\frac{-\rho^2}{4})\ d\rho$"
         else:
             raise ValueError(f"unrecognized integrand: {integrand.__name__}")
         fig.suptitle((
@@ -432,6 +474,14 @@ class TestAxisymmetricWaves(TestCase):
         ))
 
         plot_hlines_through_origin(axs)
+        return
+
+    def plot_ordinates_of_wave_function(self):
+        """Reproduce figure (4) from Carrier 2005 """
+        ts = [5, 10, 20, 50, 100]
+        rs = linspace(0, 50, 225)
+        rho_start = 0
+        rho_stop = 3
         return
 
     @classmethod
