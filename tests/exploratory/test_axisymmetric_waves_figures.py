@@ -1,6 +1,6 @@
 """Exploratory tests and functions to reproduce figures in Carrier2005
 
-Once you figure out the implementation of the closed form solution to the 
+Once you figure out the implementation of the closed form solution to the
 wave displacement, then you can transfer the  contents of this file
 to a proper scripts directory.
 
@@ -13,7 +13,7 @@ from numpy import (linspace, cos, exp, abs, pi, sqrt, zeros_like, inf,
                    atleast_1d, isclose)
 from numpy import all as np_all
 from scipy.integrate import quad, IntegrationWarning
-from scipy.special import j0, ellipk, ellipe
+from scipy.special import j0, ellipk, ellipe, kv, iv
 from unittest import TestCase, main, skip
 from typing import Callable, Union
 from warnings import simplefilter
@@ -327,6 +327,42 @@ def compute_ordinate_of_wave_function(
     return ordinate*integral
 
 
+def compute_ordinate_x_axis(which_ordinate: str, r, t):
+    t_ordinate = "t"
+    r_ordinate = "r"
+    valid_ordinates = [t_ordinate, r_ordinate]
+    assert which_ordinate in valid_ordinates
+    denom = 4*r if which_ordinate == r_ordinate else 4*t
+    return (r**2 - t**2)/denom
+
+
+def compute_analytic_recipe(s):
+    """Equation (13).
+
+    TODO: d/ds is an operator ...
+    """
+    # TODO: do at least 1d?
+    f_of_s = zeros_like(s)
+
+    def compute_s_prod(s):
+        return ((2*s**2)**(1/4))*exp(-2*s**2)
+
+    order = 1/4
+    mask1 = s > 0
+    s1 = s[mask1]
+    s1_prod = compute_s_prod(s1)
+    f_of_s[mask1] = s1_prod*kv(order, 2*s1**2)
+
+    mask2 = s < 0
+    s2 = s[mask2]
+    s2_prod = compute_s_prod(s2)
+    f_of_s[mask2] = (
+        s2_prod * (kv(order, 2*s2**2) + pi * sqrt(2)*iv(order, 2*s2**2)))
+    # simply take slope between two points
+    deriv = (f_of_s[1:-1] - f_of_s[0:-2])/(s[1:-1] - s[0:-2])
+    return -0.0238*deriv
+
+
 class TestAxisymmetricWaves(TestCase):
     def test_plot_fig2_greens_func_and_discontinuities(self):
         """Reproduce figure 2 from Carrier2002, Green's function and discontin.
@@ -487,21 +523,22 @@ class TestAxisymmetricWaves(TestCase):
         plot_hlines_through_origin(axs)
         return
 
+    @skip("not correctly implemented")
     def test_plot_ordinates_of_wave_function(self):
         """Reproduce figure (4) from Carrier 2005 """
         ts = [5, 10, 20, 50, 100]
-        rs = linspace(0, 50, 225)
+        rs = linspace(0, 50, 225)  # TODO: not sure what this should be
         rho_start = 0
         rho_stop = inf
 
-        def compute_ordinate_x_axis(r, t):
-            return (r**2 - t**2)/4*r
-        xs = [compute_ordinate_x_axis(rs, t) for t in ts]
+        # 4a
+        which_ordinate = "r"
+        xs = [compute_ordinate_x_axis(which_ordinate, rs, t) for t in ts]
         fig, axs = plt.subplots(2, 1, figsize=(6, 10))
         for x, t in zip(xs, ts):
             r_to_wave_profile = [
                 compute_ordinate_of_wave_function(
-                    which_ordinate="r",
+                    which_ordinate=which_ordinate,
                     rho_start=rho_start,
                     rho_stop=rho_stop,
                     r=r,
@@ -515,6 +552,31 @@ class TestAxisymmetricWaves(TestCase):
         axs[0].legend()
         plot_hlines_through_origin(axs)
         plot_vlines_through_origin(axs)
+
+        # 4b
+        return
+
+    def test_plot_analytic_recipe_and_ordinate_recipe(self):
+        """Reproduce figure (5) in Carrier 2005
+
+        TODO: currently only has analytic recipe plotted 
+        """
+        # plot analytical recipe
+        s = linspace(-5, 3, 200)
+        recipe = compute_analytic_recipe(s)
+        fig, ax = plt.subplots()
+        # because recipe computes a derivative, i.e., slope between two points,
+        # plotting the midpoint between consecutive s points is still accurate
+        # since the midpoint lies also on the slope
+        midpoint_s = (s[1:-1] + s[0:-2])/2
+        ax.plot(midpoint_s, recipe, label="M(s)")
+        ax.set_title(
+            "Figure (5): Analytic Recipe and Ordinate Scaled Wave Equation")
+        ax.set_xlim(-5, 3)
+        ax.set_ylim(-0.05, 0.11)
+        ax.legend()
+        plot_hlines_through_origin([ax])
+        plot_vlines_through_origin([ax])
         return
 
     @classmethod
