@@ -523,18 +523,17 @@ class TestAxisymmetricWaves(TestCase):
         plot_hlines_through_origin(axs)
         return
 
-    @skip("not correctly implemented")
     def test_plot_ordinates_of_wave_function(self):
         """Reproduce figure (4) from Carrier 2005 """
         ts = [5, 10, 20, 50, 100]
-        rs = linspace(0, 50, 225)  # TODO: not sure what this should be
+        rs = linspace(0, 50, 500)
         rho_start = 0
         rho_stop = inf
+        fig, axs = plt.subplots(2, 1, figsize=(6, 10))
 
         # 4a
         which_ordinate = "r"
         xs = [compute_ordinate_x_axis(which_ordinate, rs, t) for t in ts]
-        fig, axs = plt.subplots(2, 1, figsize=(6, 10))
         for x, t in zip(xs, ts):
             r_to_wave_profile = [
                 compute_ordinate_of_wave_function(
@@ -547,9 +546,32 @@ class TestAxisymmetricWaves(TestCase):
                 for r in rs]
             assert len(r_to_wave_profile) == len(x)
             axs[0].plot(x, r_to_wave_profile, label=f"t={t}")
-        axs[0].set_ylim(-0.04, 0.1)
-        axs[0].set_xlim(-2, 2)
+        axs[0].set_ylim(-0.06, 0.11)
+        axs[0].set_xlim(-3, 3)
+        axs[0].set_xlabel(r"$(r^2 - t^2)/4r$")
         axs[0].legend()
+
+        # 4b
+        which_ordinate = "t"
+        xs = [compute_ordinate_x_axis(which_ordinate, rs, t) for t in ts]
+        for x, t in zip(xs, ts):
+            r_to_wave_profile = [
+                compute_ordinate_of_wave_function(
+                    which_ordinate=which_ordinate,
+                    rho_start=rho_start,
+                    rho_stop=rho_stop,
+                    r=r,
+                    t=t,
+                    limit=250)
+                for r in rs]
+            assert len(r_to_wave_profile) == len(x)
+            axs[1].plot(x, r_to_wave_profile, label=f"t={t}")
+        axs[1].set_ylim(-0.06, 0.11)
+        axs[1].set_xlim(-3, 3)
+        axs[1].set_xlabel(r"$(r^2 - t^2)/4t$")
+        axs[1].legend()
+
+        fig.suptitle("Figure (4): Self Similar Wave Profiles")
         plot_hlines_through_origin(axs)
         plot_vlines_through_origin(axs)
 
@@ -578,6 +600,7 @@ class TestAxisymmetricWaves(TestCase):
         plot_vlines_through_origin([ax])
         return
 
+    @skip("save time and skip this")
     def test_plot_figure3_using_time_diff_of_gdot_wave_func(self):
         """Reproduce figure (3) using finite diff w.r.t time"""
         delta_t = 0.1
