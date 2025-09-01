@@ -559,7 +559,7 @@ class TestAxisymmetricWaves(TestCase):
     def test_plot_analytic_recipe_and_ordinate_recipe(self):
         """Reproduce figure (5) in Carrier 2005
 
-        TODO: currently only has analytic recipe plotted 
+        TODO: currently only has analytic recipe plotted
         """
         # plot analytical recipe
         s = linspace(-5, 3, 200)
@@ -576,6 +576,74 @@ class TestAxisymmetricWaves(TestCase):
         ax.legend()
         plot_hlines_through_origin([ax])
         plot_vlines_through_origin([ax])
+        return
+
+    def test_plot_figure3_using_time_diff_of_gdot_wave_func(self):
+        """Reproduce figure (3) using finite diff w.r.t time"""
+        delta_t = 0.1
+        t_a = [0.5, 0.75, 1.0, 1.5, 2.0, 5.0]
+        t_b = [1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 40.0, 50.0]
+        t_a_regimes = [(t, t-delta_t) for t in t_a]
+        t_b_regimes = [(t, t-delta_t) for t in t_b]
+
+        def compute_time_derivative_of_integrand_for_rs(rs, t_regimes):
+            rho_start = 0
+            rho_stop = inf
+            r_to_t_regime_to_udot = []
+            for r in rs:
+                t_regime_to_udot = []
+                for t_regime in t_regimes:
+                    t_right, t_left = t_regime
+                    u_right, err_right = quad(
+                        integrand_superposition_no_Gdot_axisymmetric_wave,
+                        rho_start,
+                        rho_stop,
+                        args=(r, t_right),
+                        limit=150,
+                    )
+                    u_left, err_left = quad(
+                        integrand_superposition_no_Gdot_axisymmetric_wave,
+                        rho_start,
+                        rho_stop,
+                        args=(r, t_left),
+                        limit=150,
+                    )
+                    udot = (u_right - u_left)/delta_t
+                    t_regime_to_udot.append(udot)
+                r_to_t_regime_to_udot.append(t_regime_to_udot)
+            return r_to_t_regime_to_udot
+
+        fig, axs = plt.subplots(2, 1, figsize=(6, 10))
+        fig.suptitle(
+            "Supplement (5): Solve Equation (9) by Finite Time Difference")
+
+        # plot fig a
+        rs = linspace(0, 10, 100)
+        r_to_t_regime_a_to_udot = compute_time_derivative_of_integrand_for_rs(
+            rs, t_a_regimes)
+        for tix, t_regime_a in enumerate(t_a_regimes):
+            r_to_udot = []
+            for t_regime_a_to_udot in r_to_t_regime_a_to_udot:
+                udot = t_regime_a_to_udot[tix]
+                r_to_udot.append(udot)
+            assert len(r_to_udot) == len(rs)
+            axs[0].plot(rs, r_to_udot, label=f"t={t_regime_a}")
+        axs[0].legend()
+
+        # plot fig b
+        rs = linspace(0, 50, 225)
+        r_to_t_regime_a_to_udot = compute_time_derivative_of_integrand_for_rs(
+            rs, t_b_regimes)
+        for tix, t_regime_a in enumerate(t_b_regimes):
+            r_to_udot = []
+            for t_regime_a_to_udot in r_to_t_regime_a_to_udot:
+                udot = t_regime_a_to_udot[tix]
+                r_to_udot.append(udot)
+            assert len(r_to_udot) == len(rs)
+            axs[1].plot(rs, r_to_udot, label=f"t={t_regime_a}")
+        axs[1].legend()
+
+        plot_hlines_through_origin(axs)
         return
 
     @classmethod
