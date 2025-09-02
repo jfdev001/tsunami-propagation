@@ -10,10 +10,10 @@ TODO:
 """
 import matplotlib.pyplot as plt
 from numpy import (linspace, cos, exp, abs, pi, sqrt, zeros_like, inf,
-                   atleast_1d, isclose)
+                   atleast_1d, isclose, meshgrid, zeros)
 from numpy import all as np_all
 from scipy.integrate import quad, IntegrationWarning
-from scipy.special import j0, ellipk, ellipe, kv, iv
+from scipy.special import j0, ellipk, ellipe, kv, iv, erf
 from unittest import TestCase, main, skip
 from typing import Callable, Union
 from warnings import simplefilter
@@ -337,10 +337,7 @@ def compute_ordinate_x_axis(which_ordinate: str, r, t):
 
 
 def compute_analytic_recipe(s):
-    """Equation (13).
-
-    TODO: d/ds is an operator ...
-    """
+    """Equation (13)."""
     # TODO: do at least 1d?
     f_of_s = zeros_like(s)
 
@@ -363,6 +360,11 @@ def compute_analytic_recipe(s):
     return -0.0238*df_ds
 
 
+def compute_initial_water_surface_displacement(x, y, X, L):
+    """Equation (14) Carrier2005"""
+    return (erf(X + L - x) - erf(X - x))*exp(-y**2)
+
+
 class TestAxisymmetricWaves(TestCase):
     @skip
     def test_plot_fig2_greens_func_and_discontinuities(self):
@@ -374,12 +376,10 @@ class TestAxisymmetricWaves(TestCase):
         fig, axs = plt.subplots(2, 1, figsize=(6, 10))
         fig.suptitle("Singularities of Green's Function")
 
-        G = greens_function
-
         # From carrier2002
-        ts = lambdas = [0.1, 0.2, 0.3, 0.4, 0.5]
-        r = sigma = 0.05
-        rhos = bs = linspace(0, 1, 100)
+        ts = [0.1, 0.2, 0.3, 0.4, 0.5]
+        r = 0.05
+        rhos = linspace(0, 1, 100)
         plot_singularities_in_greens_function(axs[0], rhos, r, ts)
         axs[0].set_ylabel("G")
         axs[0].set_title(f"r = {r}")
@@ -528,6 +528,7 @@ class TestAxisymmetricWaves(TestCase):
         plot_hlines_through_origin(axs)
         return
 
+    @skip
     def test_plot_ordinates_of_wave_function(self):
         """Reproduce figure (4) from Carrier 2005 """
         ts = [5, 10, 20, 50, 100]
@@ -583,11 +584,9 @@ class TestAxisymmetricWaves(TestCase):
         plot_vlines_through_origin(axs)
         return
 
+    @skip
     def test_plot_analytic_recipe_and_ordinate_recipe(self):
-        """Reproduce figure (5) in Carrier 2005
-
-        TODO: currently only has analytic recipe plotted
-        """
+        """Reproduce figure (5) in Carrier 2005"""
         # plot analytical recipe
         s = linspace(-5, 3, 200)
         recipe = compute_analytic_recipe(s)
@@ -693,6 +692,60 @@ class TestAxisymmetricWaves(TestCase):
         axs[1].legend()
 
         plot_hlines_through_origin(axs)
+        return
+
+    @skip
+    def test_plot_initial_water_surface_displacement(self):
+        fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+
+        domains = [
+            linspace(-10, 10, 25),
+            linspace(-15, 15, 25),
+            linspace(-22, 22, 25)]
+        M = N = len(domains[0])
+        Z = zeros(shape=(M, N))
+        Ls = [10, 20, 40]
+
+        # tells where X begins in X ---> X+L  on the x-axis.. i.e., leftmost 
+        Xs = [-5, -10, -20]  
+
+        for ix, L in enumerate(Ls):
+            domain = domains[ix]
+            X = Xs[ix]
+            # Compute mesh directly instead of using meshgrid 
+            for nix, x in enumerate(domain):
+                for mix, y in enumerate(domain):
+                    z = compute_initial_water_surface_displacement(x, y, X, L)
+                    Z[mix, nix] = z
+
+            # some domain tricks to reproduce figures 
+            domain_min = int(domain[0]) - 5 if L != 40 else -25
+            domain_max = int(domain[-1]) + 5 if L != 40 else 25
+            xy_ticks = range(domain_min, domain_max+1, 1)
+            valid_ticks = range(domain_min, domain_max+1, 5)
+            tick_labels = []
+            for t in xy_ticks:
+                if t in valid_ticks:
+                    tick_labels.append(str(t))
+                else:
+                    tick_labels.append("")
+
+            axs[ix].contour(domain, domain, Z, levels=5)
+
+            axs[ix].set_xlim(domain_min, domain_max)
+            axs[ix].set_xticks(xy_ticks)
+            axs[ix].set_xticklabels(tick_labels)
+
+            axs[ix].set_ylim(domain_min, domain_max)
+            axs[ix].set_yticks(xy_ticks)
+            axs[ix].set_yticklabels(tick_labels)
+
+        fig.suptitle(
+            f"Figure (6): Initial water surface displacement at L={Ls}\n"
+            r"$\eta(x, y, t=0) = [erf(X + L - x) - erf(X - x)]\exp(-y^2)$")
+        fig.supxlabel("x")
+        fig.supylabel("y")
+
         return
 
     @classmethod
