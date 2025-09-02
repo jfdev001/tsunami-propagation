@@ -86,4 +86,11 @@ $$
 \end{aligned}
 $$
 
+Note that if we have $\eta(x,y,t)$, then the finite difference for the 
+spatial derivative can be written as 
+
+$$
+\nabla^2 \eta = \eta_{xx} + \eta_{yy} = \frac{\eta^{n}_{i+1,j} - 2\eta^{n}_{i,j} + \eta^{n}_{i-1,j}}{\Delta x^2} + \frac{\eta^{n}_{i,j+1} - 2\eta^{n}_{i,j} + \eta^{n}_{i,j-1}}{\Delta y^2}. 
+$$
+
 # References
