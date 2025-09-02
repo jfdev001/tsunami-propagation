@@ -364,6 +364,7 @@ def compute_analytic_recipe(s):
 
 
 class TestAxisymmetricWaves(TestCase):
+    @skip
     def test_plot_fig2_greens_func_and_discontinuities(self):
         """Reproduce figure 2 from Carrier2002, Green's function and discontin.
 
@@ -398,6 +399,7 @@ class TestAxisymmetricWaves(TestCase):
 
         return
 
+    @skip
     def test_plot_different_integrands_at_fixed_t_and_r(self):
         """Reproduce figure (2) from Carrier 2005."""
         t = 102
@@ -432,6 +434,7 @@ class TestAxisymmetricWaves(TestCase):
         plot_hlines_through_origin(axs)
         return
 
+    @skip
     def test_plot_sanity_check_bessel_integrand_and_computed_integrals(self):
         suptitle = (
             "Supplement (3.2):\n"
@@ -444,6 +447,7 @@ class TestAxisymmetricWaves(TestCase):
         plot_hlines_through_origin(axs)
         return
 
+    @skip
     def test_plot_sanity_check_Gdot_integrand_and_computed_integrals(self):
         """
         Plot the integrand with Gdot if values are not 0 for ts and rs.
@@ -464,6 +468,7 @@ class TestAxisymmetricWaves(TestCase):
         plot_hlines_through_origin(axs)
         return
 
+    @skip
     def test_plot_integral_of_axisymmetric_wave_integrand_with_bessel_func(self):
         """Reproduce figure 3 from Carrier 2005  -- evolution of wave surface
 
@@ -526,7 +531,7 @@ class TestAxisymmetricWaves(TestCase):
     def test_plot_ordinates_of_wave_function(self):
         """Reproduce figure (4) from Carrier 2005 """
         ts = [5, 10, 20, 50, 100]
-        rs = linspace(0, 50, 500)
+        rs = linspace(0.2, 100, 1000)
         rho_start = 0
         rho_stop = inf
         fig, axs = plt.subplots(2, 1, figsize=(6, 10))
@@ -550,6 +555,7 @@ class TestAxisymmetricWaves(TestCase):
         axs[0].set_xlim(-3, 3)
         axs[0].set_xlabel(r"$(r^2 - t^2)/4r$")
         axs[0].legend()
+        axs[0].set_title(r"$\phi$")
 
         # 4b
         which_ordinate = "t"
@@ -569,13 +575,12 @@ class TestAxisymmetricWaves(TestCase):
         axs[1].set_ylim(-0.06, 0.11)
         axs[1].set_xlim(-3, 3)
         axs[1].set_xlabel(r"$(r^2 - t^2)/4t$")
+        axs[1].set_title(r"$\varphi$")
         axs[1].legend()
 
         fig.suptitle("Figure (4): Self Similar Wave Profiles")
         plot_hlines_through_origin(axs)
         plot_vlines_through_origin(axs)
-
-        # 4b
         return
 
     def test_plot_analytic_recipe_and_ordinate_recipe(self):
@@ -591,11 +596,32 @@ class TestAxisymmetricWaves(TestCase):
         # f'i is at upstream point i
         downstream_s = s[1:]
         ax.plot(downstream_s, recipe, label="M(s)")
-        ax.set_title(
-            "Figure (5): Analytic Recipe and Ordinate Scaled Wave Equation")
+
+        # plot numerical recipe
+        rs = linspace(0.2, 100, 1000)
+        rho_start = 0
+        rho_stop = inf
+        which_ordinate = "t"
+        t = 50
+        x = compute_ordinate_x_axis(which_ordinate, rs, t)
+        r_to_wave_profile = [
+            compute_ordinate_of_wave_function(
+                which_ordinate=which_ordinate,
+                rho_start=rho_start,
+                rho_stop=rho_stop,
+                r=r,
+                t=t,
+                limit=250)
+            for r in rs]
+        assert len(r_to_wave_profile) == len(x)
+        ax.plot(x, r_to_wave_profile, label=r"$\varphi(s)$" + f", t={t}")
+
         ax.set_xlim(-5, 3)
         ax.set_ylim(-0.05, 0.11)
         ax.legend()
+        ax.set_title(
+            "Figure (5): Analytic Recipe and t-Ordinate Scaled Wave Equation")
+
         plot_hlines_through_origin([ax])
         plot_vlines_through_origin([ax])
         return
