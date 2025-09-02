@@ -81,16 +81,16 @@ $$
 \begin{aligned}
 \eta^{1}   &= \Delta t^2 gh \nabla^2 \eta^n + 2 \eta^n + 2 \Delta t \eta_t(r, t=0) - \eta^1, \\
 2 \eta^{1} &= \Delta t^2 gh \nabla^2 \eta^n + 2 \eta^n + 2 \Delta t \eta_t(r, t=0), \\
-\eta^{1}   &= \frac{\Delta t^2 gh \nabla^2 \eta^n}{2} + \eta^n + \Delta t \eta_t(r, t=0),
+\eta^{1}   &= \frac{\Delta t^2 gh \nabla^2 \eta^n}{2} + \eta^n + \Delta t \eta_t(r, t=0),\\
            &= \frac{\Delta t^2 gh \nabla^2 \eta^n}{2} + \eta^n + \Delta t F(r). 
 \end{aligned}
 $$
 
 Note that if we have $\eta(x,y,t)$, then the finite difference for the 
-spatial derivative can be written as 
+spatial derivative can be written as (assume $\eta = \eta^n$) 
 
 $$
-\nabla^2 \eta = \eta_{xx} + \eta_{yy} = \frac{\eta^{n}_{i+1,j} - 2\eta^{n}_{i,j} + \eta^{n}_{i-1,j}}{\Delta x^2} + \frac{\eta^{n}_{i,j+1} - 2\eta^{n}_{i,j} + \eta^{n}_{i,j-1}}{\Delta y^2}. 
+\nabla^2 \eta = \eta_{xx} + \eta_{yy} = \frac{\eta_{i+1,j} - 2\eta_{i,j} + \eta_{i-1,j}}{\Delta x^2} + \frac{\eta_{i,j+1} - 2\eta_{i,j} + \eta_{i,j-1}}{\Delta y^2}. 
 $$
 
 # References
