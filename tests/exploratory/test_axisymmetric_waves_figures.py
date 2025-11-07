@@ -366,7 +366,7 @@ def compute_initial_water_surface_displacement(x, y, X, L):
 
 
 class TestAxisymmetricWaves(TestCase):
-    @skip
+    # @skip
     def test_plot_fig2_greens_func_and_discontinuities(self):
         """Reproduce figure 2 from Carrier2002, Green's function and discontin.
 
@@ -399,7 +399,7 @@ class TestAxisymmetricWaves(TestCase):
 
         return
 
-    @skip
+    # @skip
     def test_plot_different_integrands_at_fixed_t_and_r(self):
         """Reproduce figure (2) from Carrier 2005."""
         t = 102
@@ -434,7 +434,7 @@ class TestAxisymmetricWaves(TestCase):
         plot_hlines_through_origin(axs)
         return
 
-    @skip
+    # @skip
     def test_plot_sanity_check_bessel_integrand_and_computed_integrals(self):
         suptitle = (
             "Supplement (3.2):\n"
@@ -447,7 +447,7 @@ class TestAxisymmetricWaves(TestCase):
         plot_hlines_through_origin(axs)
         return
 
-    @skip
+    # @skip
     def test_plot_sanity_check_Gdot_integrand_and_computed_integrals(self):
         """
         Plot the integrand with Gdot if values are not 0 for ts and rs.
@@ -468,7 +468,7 @@ class TestAxisymmetricWaves(TestCase):
         plot_hlines_through_origin(axs)
         return
 
-    @skip
+    # @skip
     def test_plot_integral_of_axisymmetric_wave_integrand_with_bessel_func(self):
         """Reproduce figure 3 from Carrier 2005  -- evolution of wave surface
 
@@ -528,7 +528,7 @@ class TestAxisymmetricWaves(TestCase):
         plot_hlines_through_origin(axs)
         return
 
-    @skip
+    # @skip
     def test_plot_ordinates_of_wave_function(self):
         """Reproduce figure (4) from Carrier 2005 """
         ts = [5, 10, 20, 50, 100]
@@ -584,7 +584,7 @@ class TestAxisymmetricWaves(TestCase):
         plot_vlines_through_origin(axs)
         return
 
-    @skip
+    # @skip
     def test_plot_analytic_recipe_and_ordinate_recipe(self):
         """Reproduce figure (5) in Carrier 2005"""
         # plot analytical recipe
@@ -625,7 +625,7 @@ class TestAxisymmetricWaves(TestCase):
         plot_vlines_through_origin([ax])
         return
 
-    @skip("save time and skip this")
+    # @skip("save time and skip this")
     def test_plot_figure3_using_time_diff_of_gdot_wave_func(self):
         """Reproduce figure (3) using finite diff w.r.t time"""
         delta_t = 0.1
@@ -694,7 +694,7 @@ class TestAxisymmetricWaves(TestCase):
         plot_hlines_through_origin(axs)
         return
 
-    @skip
+    # @skip
     def test_plot_initial_water_surface_displacement(self):
         fig, axs = plt.subplots(1, 3, figsize=(15, 5))
 
@@ -706,19 +706,19 @@ class TestAxisymmetricWaves(TestCase):
         Z = zeros(shape=(M, N))
         Ls = [10, 20, 40]
 
-        # tells where X begins in X ---> X+L  on the x-axis.. i.e., leftmost 
-        Xs = [-5, -10, -20]  
+        # tells where X begins in X ---> X+L  on the x-axis.. i.e., leftmost
+        Xs = [-5, -10, -20]
 
         for ix, L in enumerate(Ls):
             domain = domains[ix]
             X = Xs[ix]
-            # Compute mesh directly instead of using meshgrid 
+            # Compute mesh directly instead of using meshgrid
             for nix, x in enumerate(domain):
                 for mix, y in enumerate(domain):
                     z = compute_initial_water_surface_displacement(x, y, X, L)
                     Z[mix, nix] = z
 
-            # some domain tricks to reproduce figures 
+            # some domain tricks to reproduce figures
             domain_min = int(domain[0]) - 5 if L != 40 else -25
             domain_max = int(domain[-1]) + 5 if L != 40 else 25
             xy_ticks = range(domain_min, domain_max+1, 1)
