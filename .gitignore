@@ -3,8 +3,12 @@
 **/*.swo
 **/*.vscode 
 
+# build directories 
+**/build*
+
 # python
 .venv
+**/__pycache__
 
 # Prerequisites
 *.d
