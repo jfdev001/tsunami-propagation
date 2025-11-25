@@ -42,5 +42,5 @@ inspect:
 	@echo $(CFLAGS)
 	@echo $(LIBS)
 
-.PHONY: all clean inspect petsc 
+.PHONY: all clean inspect
 
