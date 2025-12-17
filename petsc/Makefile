@@ -1,11 +1,12 @@
 # Simple makefile to build a petsc application
 
 # Compiler settings
-PETSC_PKGCONFIG_PATH = $(HOME)/petsc-build/v3.22/lib/pkgconfig/
-CC = mpicc
-CFLAGS = -Wall -O2 $(PETSC_CFLAGS)
-PETSC_CFLAGS = $(shell pkg-config --with-path=$(PETSC_PKGCONFIG_PATH) --cflags petsc)
-LIBS = $(shell pkg-config --with-path=$(PETSC_PKGCONFIG_PATH) --libs petsc)
+export PKG_CONFIG_PATH := $(HOME)/petsc-build/v3.22/lib/pkgconfig:$(PKG_CONFIG_PATH)
+PETSC_CFLAGS := `pkg-config --cflags petsc`
+PETSC_LIBS := `pkg-config --libs petsc`
+
+CC := mpicc
+CFLAGS := -Wall -O2 
 
 # Directories
 BUILD_DIR = build
@@ -22,11 +23,11 @@ all: $(TARGET)
 
 # Link final program
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(LIBS) -o $@ $^
+	$(CC) $(CFLAGS) $(PETSC_LIBS) -o $@ $^
 
 # Compile .c to build/*.o
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(LIBS) -c $< -o $@
+	$(CC) $(CFLAGS) $(PETSC_CFLAGS) -c $< -o $@
 
 # Create build directory if missing
 $(BUILD_DIR):
@@ -40,7 +41,8 @@ clean:
 inspect:
 	@echo $(CC)
 	@echo $(CFLAGS)
-	@echo $(LIBS)
+	@echo $(PETSC_CFLAGS)
+	@echo $(PETSC_LIBS)
 
 .PHONY: all clean inspect
 
