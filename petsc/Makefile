@@ -1,4 +1,8 @@
 # Simple makefile to build a petsc application
+.PHONY: all clean inspect check_petsc
+
+SHELL := bash
+.SHELLFLAGS := -eu -o pipefail -c
 
 # Compiler settings
 export PKG_CONFIG_PATH := $(HOME)/petsc-build/v3.22/lib/pkgconfig:$(PKG_CONFIG_PATH)
@@ -19,7 +23,15 @@ OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
 TARGET = $(BUILD_DIR)/main
 
 # Default rule
-all: $(TARGET)
+all: check_petsc $(TARGET)
+
+check_petsc:
+	@if [[ -z ${PETSC_CFLAGS} || -z ${PETSC_LIBS} ]]; then\
+		echo "'pkg-config petsc' failed to find petsc";\
+		echo "Make sure petsc is installed and that PKG_CONFIG_PATH contains a";\
+		echo "directory with a petsc.pc file";\
+		exit 1;\
+	fi
 
 # Link final program
 $(TARGET): $(OBJS)
@@ -43,6 +55,3 @@ inspect:
 	@echo $(CFLAGS)
 	@echo $(PETSC_CFLAGS)
 	@echo $(PETSC_LIBS)
-
-.PHONY: all clean inspect
-
