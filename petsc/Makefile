@@ -5,7 +5,8 @@ SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
 
 # Compiler settings
-export PKG_CONFIG_PATH := $(HOME)/petsc-build/v3.22/lib/pkgconfig:$(PKG_CONFIG_PATH)
+PETSC_PKG_CONFIG := $(HOME)/petsc-build/v3.22/lib/pkgconfig
+export PKG_CONFIG_PATH := $(PETSC_PKG_CONFIG):$(PKG_CONFIG_PATH)
 PETSC_CFLAGS := `pkg-config --cflags petsc`
 PETSC_LIBS := `pkg-config --libs petsc`
 
