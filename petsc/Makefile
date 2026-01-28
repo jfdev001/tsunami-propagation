@@ -1,17 +1,8 @@
 # Simple makefile to build a petsc application
-.PHONY: all clean inspect check_petsc
+.PHONY: all clean inspect
 
 SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
-
-# Compiler settings
-PETSC_PKG_CONFIG := $(HOME)/petsc-build/v3.22/lib/pkgconfig
-export PKG_CONFIG_PATH := $(PETSC_PKG_CONFIG):$(PKG_CONFIG_PATH)
-PETSC_CFLAGS := `pkg-config --cflags petsc`
-PETSC_LIBS := `pkg-config --libs petsc`
-
-CC := mpicc
-CFLAGS := -Wall -O2 
 
 # Directories
 BUILD_DIR = build
@@ -23,24 +14,21 @@ OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
 # Final executable
 TARGET = $(BUILD_DIR)/main
 
-# Default rule
-all: check_petsc $(TARGET)
+# Petsc variables
+include ${PETSC_DIR}/lib/petsc/conf/variables
 
-check_petsc:
-	@if [[ -z ${PETSC_CFLAGS} || -z ${PETSC_LIBS} ]]; then\
-		echo "'pkg-config petsc' failed to find petsc";\
-		echo "Make sure petsc is installed and that PKG_CONFIG_PATH contains a";\
-		echo "directory with a petsc.pc file";\
-		exit 1;\
-	fi
+# Default rule
+all: $(TARGET)
 
 # Link final program
+# NOTE: CLINKER uses -O0 and -g3 by default... so change to higher optimization
+# in production...
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(PETSC_LIBS) -o $@ $^
+	${CLINKER} -o $@ $^ ${PETSC_LIB}
 
 # Compile .c to build/*.o
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(PETSC_CFLAGS) -c $< -o $@
+	 ${CC} -c $< -o $@ ${PETSC_CC_INCLUDES}
 
 # Create build directory if missing
 $(BUILD_DIR):
@@ -52,7 +40,8 @@ clean:
 
 # Inspect variables 
 inspect:
-	@echo $(CC)
-	@echo $(CFLAGS)
-	@echo $(PETSC_CFLAGS)
-	@echo $(PETSC_LIBS)
+	@echo "CC:" $(CC)
+	@echo "CFLAGS:" $(CFLAGS)
+	@echo "CLINKER:" ${CLINKER}
+	@echo "PETSC_LIB:" ${PETSC_LIB}
+	@echo "PETSC_CC_INCLUDES:" ${PETSC_CC_INCLUDES}

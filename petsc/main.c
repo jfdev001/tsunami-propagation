@@ -1,7 +1,12 @@
-#include "stdio.h"
-#include <petscdm.h>
+static char help[] = "Hello world for PETSC\n\n";
 
-int main() {
-    printf("Hello world!\n");
-    return 0;
+#include "stdio.h"
+#include <petscvec.h>
+
+int main(int argc, char **args) {
+  printf("Hello world!\n");
+  PetscFunctionBeginUser;
+  PetscCall(PetscInitialize(&argc, &args, NULL, help));
+  PetscCall(PetscFinalize());
+  return 0;
 }
